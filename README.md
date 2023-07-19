@@ -13,7 +13,7 @@ cd <path to>/CSViewer
 ```
 
 ### NPM Modules
-To make sure all of the modules needed to run the app is installed, goto the `src` directory and run `setup.js`
+To make sure all of the modules needed to run the app is installed, go to the `src` directory and run `setup.js`
 ```
 cd <path to>/CSViewer/src
 node setup.js

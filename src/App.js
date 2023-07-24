@@ -3,6 +3,7 @@ import Papa from "papaparse";
 import Modal from "react-modal";
 import RowPopup from "./RowPopup";
 import DataTable from "react-data-table-component";
+import { useDropzone } from "react-dropzone";
 import "./App.css";
 
 const App = () => {
@@ -57,8 +58,9 @@ const App = () => {
     });
   }, [renamedHeaders, hiddenColumns, filterCriteria, searchTerms]);
 
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0];
+  // Create a function to handle file drop using react-dropzone
+  const handleDrop = useCallback((acceptedFiles) => {
+    const file = acceptedFiles[0];
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
@@ -72,7 +74,14 @@ const App = () => {
         setDropdownOptions({});
       },
     });
-  };
+  }, []);
+
+  // Use react-dropzone hook
+  const { getRootProps, getInputProps } = useDropzone({
+    onDrop: handleDrop,
+    accept: ".csv",
+    multiple: false, // Allow only single file drop
+  });
 
   const handleRowClick = (rowData) => {
     setSelectedRowData(rowData);
@@ -129,7 +138,7 @@ const App = () => {
       return updatedHeaders;
     });
   };
-
+  // eslint-disable-next-line
   const handleFilterChange = useCallback((event, column) => {
     const value = event.target.value;
     const newColumn = renamedHeaders[column] || column;
@@ -217,7 +226,10 @@ const App = () => {
       <div className="section section2">
         <div className="upload-container">
           <h2>Upload CSV</h2>
-          <input type="file" accept=".csv" onChange={handleFileUpload} />
+          <div {...getRootProps()} className="dropzone">
+            <input {...getInputProps()} />
+            <p>Drag 'n' drop a CSV file here, or click to select a file</p>
+          </div>
         </div>
       </div>
 

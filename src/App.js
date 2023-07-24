@@ -1,9 +1,4 @@
-// The script creates a dynamic CSV table display with filtering, 
-// searching, column toggling, pagination, and the ability to view 
-// detailed information for each row in a modal. Users can also 
-// download the filtered data as CSV or JSON files.
-
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import Papa from "papaparse";
 import Modal from "react-modal";
 import RowPopup from "./RowPopup";
@@ -13,11 +8,54 @@ import "./App.css";
 const App = () => {
   const [data, setData] = useState([]);
   const [headers, setHeaders] = useState([]);
+  const [renamedHeaders, setRenamedHeaders] = useState({});
   const [selectedRowData, setSelectedRowData] = useState({});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hiddenColumns, setHiddenColumns] = useState([]);
   const [filterCriteria, setFilterCriteria] = useState({});
   const [searchTerms, setSearchTerms] = useState({});
+  const [dropdownOptions, setDropdownOptions] = useState({});
+  const [initialState, setInitialState] = useState({});
+
+  useEffect(() => {
+    // Refresh filter criteria when renamedHeaders change
+    setFilterCriteria((prevCriteria) => {
+      const updatedCriteria = {};
+      Object.entries(prevCriteria).forEach(([column, value]) => {
+        const newColumn = renamedHeaders[column] || column;
+        updatedCriteria[newColumn] = value;
+      });
+      return updatedCriteria;
+    });
+  }, [renamedHeaders]);
+
+  useEffect(() => {
+    // Update dropdown options when searchTerms change
+    setDropdownOptions((prevOptions) => {
+      const updatedOptions = { ...prevOptions };
+      headers.forEach((header) => {
+        if (!hiddenColumns.includes(header)) {
+          const searchTerm = searchTerms[header]?.toLowerCase();
+          const allValues = Array.from(new Set(data.map((row) => row[header])));
+          const filteredValues = allValues.filter(
+            (value) => !searchTerm || value.toLowerCase().includes(searchTerm)
+          );
+          updatedOptions[header] = filteredValues;
+        }
+      });
+      return updatedOptions;
+    });
+  }, [searchTerms, data, headers, hiddenColumns]);
+
+  useEffect(() => {
+    // Save the initial state for reset
+    setInitialState({
+      renamedHeaders: { ...renamedHeaders },
+      hiddenColumns: [...hiddenColumns],
+      filterCriteria: { ...filterCriteria },
+      searchTerms: { ...searchTerms },
+    });
+  }, [renamedHeaders, hiddenColumns, filterCriteria, searchTerms]);
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
@@ -27,9 +65,11 @@ const App = () => {
       complete: (result) => {
         setData(result.data);
         setHeaders(result.meta.fields);
+        setRenamedHeaders({});
         setHiddenColumns([]);
         setFilterCriteria({});
         setSearchTerms({});
+        setDropdownOptions({});
       },
     });
   };
@@ -40,22 +80,24 @@ const App = () => {
   };
 
   const columns = headers.map((header) => ({
-    name: header,
+    name: renamedHeaders[header] || header,
     selector: header,
     sortable: true,
     wrap: true,
     format: (row) => {
-      if (row[header].length > 100) {
-        return row[header].substring(0, 100) + "...";
+      const value = row[header];
+      if (value && value.length > 100) {
+        return value.substring(0, 100) + "...";
       }
-      return row[header];
+      return value;
     },
     omit: hiddenColumns.includes(header),
     grow: 1,
   }));
 
   const filteredData = useMemo(() => {
-    if (Object.keys(filterCriteria).length === 0 && Object.keys(searchTerms).length === 0) return data;
+    if (Object.keys(filterCriteria).length === 0 && Object.keys(searchTerms).length === 0)
+      return data;
     return data.filter((row) =>
       headers.every((header) => {
         const criteria = filterCriteria[header];
@@ -70,39 +112,58 @@ const App = () => {
 
   const handleColumnToggle = (event, column) => {
     const isChecked = event.target.checked;
-    if (isChecked) {
-      setHiddenColumns((prevHidden) => prevHidden.filter((col) => col !== column));
-    } else {
-      setHiddenColumns((prevHidden) => [...prevHidden, column]);
-      setFilterCriteria((prevCriteria) => {
-        const updatedCriteria = { ...prevCriteria };
-        delete updatedCriteria[column];
-        return updatedCriteria;
-      });
-    }
+    setHiddenColumns((prevHidden) => {
+      if (isChecked) {
+        return prevHidden.filter((col) => col !== column);
+      } else {
+        return [...prevHidden, column];
+      }
+    });
+    // Update the renamedHeaders state with the edited field name
+    setRenamedHeaders((prevRenamedHeaders) => {
+      const updatedHeaders = { ...prevRenamedHeaders };
+      if (!isChecked) {
+        // Reset field name to default when column is hidden
+        delete updatedHeaders[column];
+      }
+      return updatedHeaders;
+    });
   };
 
-  const handleFilterChange = (event, column) => {
+  const handleFilterChange = useCallback((event, column) => {
     const value = event.target.value;
-    setFilterCriteria((prevCriteria) => ({
-      ...prevCriteria,
-      [column]: value,
-    }));
-  };
-
-  const handleSearchChange = (event, column) => {
-    const value = event.target.value;
+    const newColumn = renamedHeaders[column] || column;
+    setFilterCriteria((prevCriteria) => {
+      const updatedCriteria = { ...prevCriteria, [newColumn]: value };
+      if (dropdownOptions[column] && !dropdownOptions[column].includes(value)) {
+        const closestMatch = dropdownOptions[column].find(
+          (option) => option.toLowerCase().startsWith(value.toLowerCase())
+        );
+        if (closestMatch) {
+          updatedCriteria[newColumn] = closestMatch;
+        }
+      }
+      return updatedCriteria;
+    });
     setSearchTerms((prevSearchTerms) => ({
       ...prevSearchTerms,
       [column]: value,
     }));
+  }, [renamedHeaders, dropdownOptions]);
+
+  const handleReset = () => {
+    setRenamedHeaders(initialState.renamedHeaders);
+    setHiddenColumns(initialState.hiddenColumns);
+    setFilterCriteria(initialState.filterCriteria);
+    setSearchTerms(initialState.searchTerms);
   };
 
   const handleDownloadCSV = () => {
     const visibleData = filteredData.map((row) =>
       headers.reduce((acc, header) => {
         if (!hiddenColumns.includes(header)) {
-          acc[header] = row[header];
+          const newColumn = renamedHeaders[header] || header;
+          acc[newColumn] = row[header];
         }
         return acc;
       }, {})
@@ -125,7 +186,8 @@ const App = () => {
     const visibleData = filteredData.map((row) =>
       headers.reduce((acc, header) => {
         if (!hiddenColumns.includes(header)) {
-          acc[header] = row[header];
+          const newColumn = renamedHeaders[header] || header;
+          acc[newColumn] = row[header];
         }
         return acc;
       }, {})
@@ -146,83 +208,157 @@ const App = () => {
 
   return (
     <div className="App">
-      <h1>CSV Table Display</h1>
-      <div className="upload-container">
-        <input type="file" accept=".csv" onChange={handleFileUpload} />
+      {/* Section 1: Header or Title - CVS Table Display */}
+      <div className="section section1">
+        <h1>CVS Table Display</h1>
       </div>
-      <div className="toggle-columns-container">
-        <p>Toggle Columns:</p>
-        {headers.map((header) => (
-          <label key={header}>
-            <input
-              type="checkbox"
-              checked={!hiddenColumns.includes(header)}
-              onChange={(e) => handleColumnToggle(e, header)}
-            />
-            {header}
-          </label>
-        ))}
+
+      {/* Section 2: CVS File Input */}
+      <div className="section section2">
+        <div className="upload-container">
+          <h2>Upload CSV</h2>
+          <input type="file" accept=".csv" onChange={handleFileUpload} />
+        </div>
       </div>
-      <div className="filter-container">
+
+      {/* Section 3: Toggle Section */}
+      <div className="section toggle-section">
+        <div className="toggle-table-container">
+          <table className="toggle-columns-table">
+            <tbody>
+              {headers.map((header) => (
+                <tr key={header}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={!hiddenColumns.includes(header)}
+                      onChange={(e) => handleColumnToggle(e, header)}
+                    />
+                  </td>
+                  <td className="field-name-cell">
+                    <input
+                      type="text"
+                      value={renamedHeaders[header] || header}
+                      onChange={(e) =>
+                        setRenamedHeaders((prevRenamedHeaders) => ({
+                          ...prevRenamedHeaders,
+                          [header]: e.target.value,
+                        }))
+                      }
+                      maxLength={100}
+                      style={{ width: "98%" }} // Set the input width to 100%
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+{/* Section 4: Filter Section */}
+<div className="section filter-section">
+  <div className="filter-table-container">
+    <table className="filter-table">
+      <tbody>
         {headers.map((header) => (
           <React.Fragment key={header}>
             {!hiddenColumns.includes(header) && (
-              <div className="filter-row">
-                <span>{header}: </span>
-                <select value={filterCriteria[header] || "All"} onChange={(e) => handleFilterChange(e, header)}>
-                  <option value="All">All</option>
-                  {Array.from(new Set(data.map((row) => row[header]))).map((value) => (
-                    <option key={value} value={value}>
-                      {value}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  placeholder={`Search ${header}`}
-                  value={searchTerms[header] || ""}
-                  onChange={(e) => handleSearchChange(e, header)}
-                />
-              </div>
+              <tr>
+                <td>
+                  <span>{renamedHeaders[header] || header}:</span>
+                </td>
+                <td className="field-name-cell">
+                  <input
+                    type="text"
+                    placeholder={`Search ${renamedHeaders[header] || header}`}
+                    value={searchTerms[header] || ""}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      const newColumn = renamedHeaders[header] || header;
+                      setFilterCriteria((prevCriteria) => ({
+                        ...prevCriteria,
+                        [newColumn]: value,
+                      }));
+                      setSearchTerms((prevSearchTerms) => ({
+                        ...prevSearchTerms,
+                        [header]: value.slice(-100), // Take the latter part of the value
+                      }));
+                    }}
+                    list={`datalist-${header}`}
+                    maxLength={98}
+                    size={95} // Set the input size to 100
+                  />
+                  <datalist id={`datalist-${header}`}>
+                    <option value="All" />
+                    {dropdownOptions[header]?.map((value) => (
+                      <option
+                        key={value}
+                        value={value}
+                        style={{
+                          width: "100%",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {value.length > 100 ? `...${value.slice(-100)}` : value}
+                      </option>
+                    ))}
+                  </datalist>
+                </td>
+              </tr>
             )}
           </React.Fragment>
         ))}
-      </div>
-      <div className="table-container">
-        <DataTable
-          columns={columns}
-          data={filteredData}
-          pagination
-          paginationPerPage={10}
-          onRowClicked={handleRowClick}
-          noHeader={false}
-          customStyles={{
-            headCells: {
-              style: {
-                paddingLeft: "8px",
-                paddingRight: "8px",
-                paddingTop: "8px",
-                paddingBottom: "8px",
-                fontWeight: "bold",
-                textAlign: "left",
+      </tbody>
+    </table>
+  </div>
+  <button onClick={handleReset}>Reset</button>
+</div>
+
+
+      {/* Section 5: Table */}
+      <div className="section section5">
+        <div className="table-container">
+          <DataTable
+            columns={columns}
+            data={filteredData}
+            pagination
+            paginationPerPage={10}
+            onRowClicked={handleRowClick}
+            noHeader={false}
+            customStyles={{
+              headCells: {
+                style: {
+                  paddingLeft: "8px",
+                  paddingRight: "8px",
+                  paddingTop: "8px",
+                  paddingBottom: "8px",
+                  fontWeight: "bold",
+                  textAlign: "left",
+                },
               },
-            },
-            cells: {
-              style: {
-                paddingLeft: "8px",
-                paddingRight: "8px",
-                paddingTop: "8px",
-                paddingBottom: "8px",
-                textAlign: "left",
+              cells: {
+                style: {
+                  paddingLeft: "8px",
+                  paddingRight: "8px",
+                  paddingTop: "8px",
+                  paddingBottom: "8px",
+                  textAlign: "left",
+                },
               },
-            },
-          }}
-        />
+            }}
+          />
+        </div>
       </div>
 
-      <div className="download-buttons">
-        <button onClick={handleDownloadCSV}>Download CSV</button>
-        <button onClick={handleDownloadJSON}>Download JSON</button>
+      {/* Section 6: Download Buttons for CSV and JSON */}
+      <div className="section section6">
+        <div className="download-buttons">
+          <button onClick={handleDownloadCSV}>Download CSV</button>
+          <button onClick={handleDownloadJSON}>Download JSON</button>
+        </div>
       </div>
 
       <Modal
@@ -230,11 +366,17 @@ const App = () => {
         onRequestClose={() => setIsModalOpen(false)}
         contentLabel="Selected Row Data"
       >
-        <RowPopup headers={headers} rowData={selectedRowData} onClose={() => setIsModalOpen(false)} />
+        <RowPopup
+          headers={headers}
+          rowData={selectedRowData}
+          renamedHeaders={renamedHeaders}
+          hiddenColumns={hiddenColumns} // Pass the hiddenColumns state as a prop
+          onClose={() => setIsModalOpen(false)}
+        />
       </Modal>
+
     </div>
   );
 };
 
 export default App;
-

@@ -1,7 +1,9 @@
 import React from "react";
 import "./RowPopup.css";
 
-const RowPopup = ({ headers, rowData, onClose }) => {
+const RowPopup = ({ headers, rowData, renamedHeaders, hiddenColumns, onClose }) => {
+  const visibleHeaders = headers.filter((header) => !hiddenColumns.includes(header));
+
   return (
     <div className="row-popup-container">
       <button className="close-btn" onClick={onClose}>
@@ -9,10 +11,10 @@ const RowPopup = ({ headers, rowData, onClose }) => {
       </button>
       <table>
         <tbody>
-          {headers.map((header) => (
+          {visibleHeaders.map((header) => (
             <tr key={header}>
-              <th>{header}</th>
-              <td>{rowData[header]}</td>
+              <th style={{ maxWidth: 100, wordWrap: "break-word" }}>{renamedHeaders[header] || header}</th>
+              <td style={{ maxWidth: 200, wordWrap: "break-word" }}>{rowData[header]}</td>
             </tr>
           ))}
         </tbody>
@@ -22,4 +24,3 @@ const RowPopup = ({ headers, rowData, onClose }) => {
 };
 
 export default RowPopup;
-

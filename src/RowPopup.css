@@ -1,7 +1,7 @@
 .row-popup-container {
-  max-width: 500px;
-  margin: 20px auto;
-  padding: 20px;
+  max-width: 1080px; /* Adjust the total width of the container and table as needed */
+  margin: 8px auto;
+  padding: 8px;
   border: 1px solid #ddd;
   border-radius: 4px;
 }
@@ -24,9 +24,10 @@ th,
 td {
   border: 1px solid #ddd;
   padding: 8px;
+  word-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 th {
   background-color: #f2f2f2;
 }
-

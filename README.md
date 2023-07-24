@@ -57,96 +57,23 @@ const data = [
 # Setup
 To set up and run the project, follow these step-by-step instructions:
 
-### Step 1: Create a New React Project
-If you don't already have a React project set up, you can create a new one using Create React App, which is an officially supported way to create React applications with a predefined project structure.
-
-Open your terminal or command prompt and run the following command to create a new React project:
-
-```
-npx create-react-app dynamic-csv-table
-```
-
-Replace dynamic-csv-table with the name you want to give your project. This command will create a new directory with the specified project name and set up the initial React project inside it.
+### Step 1: Clone repo
 
 ### Step 2: Navigate to the Project Directory
 Change the directory to the newly created project:
 
 ```
-cd dynamic-csv-table
+cd CSViewer
 ```
 
 ### Step 3: Install Dependencies
 In this project, we need additional dependencies: papaparse, react-modal, and react-data-table-component. To install them, run the following command:
 
 ```
-npm install papaparse react-modal react-data-table-component
+node src/check_modules.js
 ```
 
-### Step 4: Replace App.js with Provided Code
-In the src folder of your project, open the App.js file, and replace its content with the provided code in the previous response.
-
-### Step 5: Create a CSS File
-In the src folder of your project, create a new CSS file called App.css and add the following CSS styles:
-
-```
-/* App.css */
-.App {
-  text-align: center;
-  padding: 20px;
-}
-
-.upload-container {
-  margin-bottom: 20px;
-}
-
-.toggle-columns-container {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
-}
-
-.filter-container {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
-}
-
-.filter-row {
-  display: flex;
-  align-items: center;
-  margin-right: 20px;
-  margin-bottom: 10px;
-}
-
-.table-container {
-  overflow-x: auto;
-  margin-bottom: 20px;
-}
-
-.download-buttons {
-  margin-bottom: 20px;
-}
-
-/* Customize modal styles as needed */
-.ReactModal__Overlay {
-  background-color: rgba(0, 0, 0, 0.75);
-}
-
-.ReactModal__Content {
-  background-color: #fff;
-  padding: 20px;
-  border-radius: 4px;
-  max-width: 600px;
-  margin: 0 auto;
-}
-```
-
-### Step 6: Save CSV File
-Save your CSV data as data.csv and place it inside the public folder of your project. You can create sample data or use your own data in CSV format.
-
-### Step 7: Run the Development Server
+### Step 4: Run the Development Server
 Now, you are ready to run the React development server. In the project directory, run the following command:
 
 ```
@@ -155,5 +82,5 @@ npm start
 
 This will start the development server and open the app in your default web browser. If it doesn't open automatically, you can access the app by navigating to http://localhost:3000 in your browser.
 
-### Step 8: Test the Application
+### Step 5: Test the Application
 Once the app is running, you can upload the data.csv file using the "Choose File" button. The CSV data will be displayed in a dynamic table with various features such as filtering, searching, column toggling, pagination, and the ability to view detailed information for each row in a modal. You can also download the filtered data as CSV or JSON files by clicking on the corresponding buttons.

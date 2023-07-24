@@ -1,9 +1,13 @@
+// App.js
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import Papa from "papaparse";
 import Modal from "react-modal";
-import RowPopup from "./RowPopup";
 import DataTable from "react-data-table-component";
 import "./App.css";
+import CSVUploader from "./CSVUploader";
+import ColumnToggle from "./ColumnToggle";
+import FilterSection from "./FilterSection";
+import RowPopup from "./RowPopup";
 
 const App = () => {
   const [data, setData] = useState([]);
@@ -57,8 +61,7 @@ const App = () => {
     });
   }, [renamedHeaders, hiddenColumns, filterCriteria, searchTerms]);
 
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0];
+  const handleFileUpload = (file) => {
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
@@ -79,21 +82,25 @@ const App = () => {
     setIsModalOpen(true);
   };
 
-  const columns = headers.map((header) => ({
-    name: renamedHeaders[header] || header,
-    selector: header,
-    sortable: true,
-    wrap: true,
-    format: (row) => {
-      const value = row[header];
-      if (value && value.length > 100) {
-        return value.substring(0, 100) + "...";
-      }
-      return value;
-    },
-    omit: hiddenColumns.includes(header),
-    grow: 1,
-  }));
+  const columns = useMemo(
+    () =>
+      headers.map((header) => ({
+        name: renamedHeaders[header] || header,
+        selector: header,
+        sortable: true,
+        wrap: true,
+        format: (row) => {
+          const value = row[header];
+          if (value && value.length > 100) {
+            return value.substring(0, 100) + "...";
+          }
+          return value;
+        },
+        omit: hiddenColumns.includes(header),
+        grow: 1,
+      })),
+    [headers, renamedHeaders, hiddenColumns]
+  );
 
   const filteredData = useMemo(() => {
     if (Object.keys(filterCriteria).length === 0 && Object.keys(searchTerms).length === 0)
@@ -110,46 +117,46 @@ const App = () => {
     );
   }, [data, headers, filterCriteria, searchTerms]);
 
-  const handleColumnToggle = (event, column) => {
-    const isChecked = event.target.checked;
-    setHiddenColumns((prevHidden) => {
-      if (isChecked) {
-        return prevHidden.filter((col) => col !== column);
-      } else {
-        return [...prevHidden, column];
-      }
-    });
-    // Update the renamedHeaders state with the edited field name
-    setRenamedHeaders((prevRenamedHeaders) => {
-      const updatedHeaders = { ...prevRenamedHeaders };
-      if (!isChecked) {
-        // Reset field name to default when column is hidden
-        delete updatedHeaders[column];
-      }
-      return updatedHeaders;
-    });
-  };
-
-  const handleFilterChange = useCallback((event, column) => {
-    const value = event.target.value;
-    const newColumn = renamedHeaders[column] || column;
-    setFilterCriteria((prevCriteria) => {
-      const updatedCriteria = { ...prevCriteria, [newColumn]: value };
-      if (dropdownOptions[column] && !dropdownOptions[column].includes(value)) {
-        const closestMatch = dropdownOptions[column].find(
-          (option) => option.toLowerCase().startsWith(value.toLowerCase())
-        );
-        if (closestMatch) {
-          updatedCriteria[newColumn] = closestMatch;
+  const handleColumnToggle = useCallback(
+    (column) => {
+      setHiddenColumns((prevHidden) =>
+        prevHidden.includes(column) ? prevHidden.filter((col) => col !== column) : [...prevHidden, column]
+      );
+      // Update the renamedHeaders state with the edited field name
+      setRenamedHeaders((prevRenamedHeaders) => {
+        const updatedHeaders = { ...prevRenamedHeaders };
+        if (hiddenColumns.includes(column)) {
+          // Reset field name to default when column is shown again
+          delete updatedHeaders[column];
         }
-      }
-      return updatedCriteria;
-    });
-    setSearchTerms((prevSearchTerms) => ({
-      ...prevSearchTerms,
-      [column]: value,
-    }));
-  }, [renamedHeaders, dropdownOptions]);
+        return updatedHeaders;
+      });
+    },
+    [hiddenColumns]
+  );
+
+  const handleFilterChange = useCallback(
+    (column, value) => {
+      const newColumn = renamedHeaders[column] || column;
+      setFilterCriteria((prevCriteria) => {
+        const updatedCriteria = { ...prevCriteria, [newColumn]: value };
+        if (dropdownOptions[column] && !dropdownOptions[column].includes(value)) {
+          const closestMatch = dropdownOptions[column].find(
+            (option) => option.toLowerCase().startsWith(value.toLowerCase())
+          );
+          if (closestMatch) {
+            updatedCriteria[newColumn] = closestMatch;
+          }
+        }
+        return updatedCriteria;
+      });
+      setSearchTerms((prevSearchTerms) => ({
+        ...prevSearchTerms,
+        [column]: value.slice(-100), // Take the latter part of the value
+      }));
+    },
+    [renamedHeaders, dropdownOptions]
+  );
 
   const handleReset = () => {
     setRenamedHeaders(initialState.renamedHeaders);
@@ -158,7 +165,7 @@ const App = () => {
     setSearchTerms(initialState.searchTerms);
   };
 
-  const handleDownloadCSV = () => {
+  const handleDownload = (format) => {
     const visibleData = filteredData.map((row) =>
       headers.reduce((acc, header) => {
         if (!hiddenColumns.includes(header)) {
@@ -168,37 +175,22 @@ const App = () => {
         return acc;
       }, {})
     );
-    const csv = Papa.unparse(visibleData, { header: true });
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", "filtered_data.csv");
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  };
 
-  const handleDownloadJSON = () => {
-    const visibleData = filteredData.map((row) =>
-      headers.reduce((acc, header) => {
-        if (!hiddenColumns.includes(header)) {
-          const newColumn = renamedHeaders[header] || header;
-          acc[newColumn] = row[header];
-        }
-        return acc;
-      }, {})
-    );
-    const json = JSON.stringify(visibleData, null, 2);
-    const blob = new Blob([json], { type: "application/json;charset=utf-8;" });
+    let outputData, filename;
+    if (format === "csv") {
+      outputData = Papa.unparse(visibleData, { header: true });
+      filename = "filtered_data.csv";
+    } else if (format === "json") {
+      outputData = JSON.stringify(visibleData, null, 2);
+      filename = "filtered_data.json";
+    }
+
+    const blob = new Blob([outputData], { type: format === "csv" ? "text/csv;charset=utf-8;" : "application/json;charset=utf-8;" });
     const link = document.createElement("a");
     if (link.download !== undefined) {
       const url = URL.createObjectURL(blob);
       link.setAttribute("href", url);
-      link.setAttribute("download", "filtered_data.json");
+      link.setAttribute("download", filename);
       link.style.visibility = "hidden";
       document.body.appendChild(link);
       link.click();
@@ -210,115 +202,41 @@ const App = () => {
     <div className="App">
       {/* Section 1: Header or Title - CVS Table Display */}
       <div className="section section1">
-        <h1>CVS Table Display</h1>
+        <h1>CSV Table Display</h1>
       </div>
 
       {/* Section 2: CVS File Input */}
       <div className="section section2">
-        <div className="upload-container">
-          <h2>Upload CSV</h2>
-          <input type="file" accept=".csv" onChange={handleFileUpload} />
-        </div>
+        <CSVUploader onFileUpload={handleFileUpload} />
       </div>
 
       {/* Section 3: Toggle Section */}
-      <div className="section toggle-section">
-        <div className="toggle-table-container">
-          <table className="toggle-columns-table">
-            <tbody>
-              {headers.map((header) => (
-                <tr key={header}>
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={!hiddenColumns.includes(header)}
-                      onChange={(e) => handleColumnToggle(e, header)}
-                    />
-                  </td>
-                  <td className="field-name-cell">
-                    <input
-                      type="text"
-                      value={renamedHeaders[header] || header}
-                      onChange={(e) =>
-                        setRenamedHeaders((prevRenamedHeaders) => ({
-                          ...prevRenamedHeaders,
-                          [header]: e.target.value,
-                        }))
-                      }
-                      maxLength={100}
-                      style={{ width: "98%" }} // Set the input width to 100%
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className="section section3-and-4">
+        <div className="section3-and-4-container">
+          <div className="toggle-section">
+            <ColumnToggle
+              headers={headers}
+              renamedHeaders={renamedHeaders}
+              hiddenColumns={hiddenColumns}
+              onColumnToggle={handleColumnToggle}
+            />
+          </div>
+          <div className="filter-section">
+            <FilterSection
+              headers={headers}
+              renamedHeaders={renamedHeaders}
+              hiddenColumns={hiddenColumns}
+              filterCriteria={filterCriteria}
+              searchTerms={searchTerms}
+              dropdownOptions={dropdownOptions}
+              onFilterChange={handleFilterChange}
+              onReset={handleReset}
+            />
+          </div>
         </div>
       </div>
 
-{/* Section 4: Filter Section */}
-<div className="section filter-section">
-  <div className="filter-table-container">
-    <table className="filter-table">
-      <tbody>
-        {headers.map((header) => (
-          <React.Fragment key={header}>
-            {!hiddenColumns.includes(header) && (
-              <tr>
-                <td>
-                  <span>{renamedHeaders[header] || header}:</span>
-                </td>
-                <td className="field-name-cell">
-                  <input
-                    type="text"
-                    placeholder={`Search ${renamedHeaders[header] || header}`}
-                    value={searchTerms[header] || ""}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      const newColumn = renamedHeaders[header] || header;
-                      setFilterCriteria((prevCriteria) => ({
-                        ...prevCriteria,
-                        [newColumn]: value,
-                      }));
-                      setSearchTerms((prevSearchTerms) => ({
-                        ...prevSearchTerms,
-                        [header]: value.slice(-100), // Take the latter part of the value
-                      }));
-                    }}
-                    list={`datalist-${header}`}
-                    maxLength={98}
-                    size={95} // Set the input size to 100
-                  />
-                  <datalist id={`datalist-${header}`}>
-                    <option value="All" />
-                    {dropdownOptions[header]?.map((value) => (
-                      <option
-                        key={value}
-                        value={value}
-                        style={{
-                          width: "100%",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {value.length > 100 ? `...${value.slice(-100)}` : value}
-                      </option>
-                    ))}
-                  </datalist>
-                </td>
-              </tr>
-            )}
-          </React.Fragment>
-        ))}
-      </tbody>
-    </table>
-  </div>
-  <button onClick={handleReset}>Reset</button>
-</div>
-
-
-      {/* Section 5: Table */}
+      {/* Section 4: Table */}
       <div className="section section5">
         <div className="table-container">
           <DataTable
@@ -353,11 +271,11 @@ const App = () => {
         </div>
       </div>
 
-      {/* Section 6: Download Buttons for CSV and JSON */}
+      {/* Section 5: Download Buttons for CSV and JSON */}
       <div className="section section6">
         <div className="download-buttons">
-          <button onClick={handleDownloadCSV}>Download CSV</button>
-          <button onClick={handleDownloadJSON}>Download JSON</button>
+          <button onClick={() => handleDownload("csv")}>Download CSV</button>
+          <button onClick={() => handleDownload("json")}>Download JSON</button>
         </div>
       </div>
 
@@ -374,9 +292,9 @@ const App = () => {
           onClose={() => setIsModalOpen(false)}
         />
       </Modal>
-
     </div>
   );
 };
 
 export default App;
+

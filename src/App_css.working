@@ -1,0 +1,127 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+}
+
+/* CSS Grid layout for the main sections */
+.App {
+  display: grid;
+  grid-template-areas:
+    "header header"
+    "upload upload"
+    "toggle filter"
+    "table table"
+    "download download";
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  max-width: 2165px; /* Set a maximum width for the entire layout */
+  margin: 0 auto; /* Center the layout */
+  padding: 20px;
+}
+
+/* Styles for the header section */
+.section1 {
+  grid-area: header;
+}
+
+/* Styles for the CVS File Input section */
+.section2 {
+  grid-area: upload;
+  margin-bottom: 20px;
+}
+
+/* Styles for the Toggle and Filter sections */
+.section3-and-4 {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+/* Container for toggle and filter tables */
+.section3-and-4-container {
+  max-width: 1080px; /* Set the container width */
+  display: flex;
+  justify-content: space-between;
+}
+
+.toggle-section {
+  margin-bottom: 10px;
+  max-width: 1080px; /* Set the toggle table width */
+}
+
+.toggle-columns-table {
+  width: 100%;
+}
+
+/* Styles for the first column containing the checkbox in Toggle Section */
+.toggle-columns-table td:first-child {
+  width: 30px;
+  text-align: center;
+}
+
+/* Styles for the Filter Section */
+.filter-section {
+  margin-bottom: 10px;
+  max-width: 1080px;
+}
+
+.filter-table-container {
+  max-width: 1080px;
+}
+
+/* Styles for the Filter Table */
+.filter-table {
+  width: 100%;
+}
+
+/* Styles for the first column in the Filter Table */
+.filter-table td:first-child {
+  width: 100px;
+}
+
+/* Styles for the Table section */
+.section5 {
+  grid-area: table;
+}
+
+/* Styles for the Download Buttons section */
+.section6 {
+  grid-area: download;
+}
+
+/* Styles for the DataTable component */
+.table-container {
+  overflow-x: auto;
+}
+
+/* Customize modal styles as needed */
+.ReactModal__Overlay {
+  background-color: rgba(0, 0, 0, 0.75);
+}
+
+.ReactModal__Content {
+  background-color: #fff;
+  padding: 8px;
+  border-radius: 4px;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+/* Additional styles for tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table,
+td {
+  border: 1px solid black;
+  padding: 8px;
+  text-align: left; /* Align the content in cells to the left */
+}
+
+/* Set the checkbox input back to its normal size */
+.toggle-columns-table input[type="checkbox"] {
+  width: auto;
+}

@@ -268,67 +268,66 @@ const App = () => {
         </div>
       </div>
 
-{/* Section 4: Filter Section */}
-<div className="section filter-section">
-  <div className="filter-table-container">
-    <table className="filter-table">
-      <tbody>
-        {headers.map((header) => (
-          <React.Fragment key={header}>
-            {!hiddenColumns.includes(header) && (
-              <tr>
-                <td>
-                  <span>{renamedHeaders[header] || header}:</span>
-                </td>
-                <td className="field-name-cell">
-                  <input
-                    type="text"
-                    placeholder={`Search ${renamedHeaders[header] || header}`}
-                    value={searchTerms[header] || ""}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      const newColumn = renamedHeaders[header] || header;
-                      setFilterCriteria((prevCriteria) => ({
-                        ...prevCriteria,
-                        [newColumn]: value,
-                      }));
-                      setSearchTerms((prevSearchTerms) => ({
-                        ...prevSearchTerms,
-                        [header]: value.slice(-100), // Take the latter part of the value
-                      }));
-                    }}
-                    list={`datalist-${header}`}
-                    maxLength={98}
-                    size={95} // Set the input size to 100
-                  />
-                  <datalist id={`datalist-${header}`}>
-                    <option value="All" />
-                    {dropdownOptions[header]?.map((value) => (
-                      <option
-                        key={value}
-                        value={value}
-                        style={{
-                          width: "100%",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {value.length > 100 ? `...${value.slice(-100)}` : value}
-                      </option>
-                    ))}
-                  </datalist>
-                </td>
-              </tr>
-            )}
-          </React.Fragment>
-        ))}
-      </tbody>
-    </table>
-  </div>
-  <button onClick={handleReset}>Reset</button>
-</div>
-
+      {/* Section 4: Filter Section */}
+      <div className="section filter-section">
+        <div className="filter-table-container">
+          <table className="filter-table">
+            <tbody>
+              {headers.map((header) => (
+                <React.Fragment key={header}>
+                  {!hiddenColumns.includes(header) && (
+                    <tr>
+                      <td>
+                        <span>{renamedHeaders[header] || header}:</span>
+                      </td>
+                      <td className="field-name-cell">
+                        <input
+                          type="text"
+                          placeholder={`Search ${renamedHeaders[header] || header}`}
+                          value={searchTerms[header] || ""}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            const newColumn = renamedHeaders[header] || header;
+                            setFilterCriteria((prevCriteria) => ({
+                              ...prevCriteria,
+                              [newColumn]: value,
+                            }));
+                            setSearchTerms((prevSearchTerms) => ({
+                              ...prevSearchTerms,
+                              [header]: value.slice(-100), // Take the latter part of the value
+                            }));
+                          }}
+                          list={`datalist-${header}`}
+                          maxLength={98}
+                          size={95} // Set the input size to 100
+                        />
+                        <datalist id={`datalist-${header}`}>
+                          <option value="All" />
+                          {dropdownOptions[header]?.map((value) => (
+                            <option
+                              key={value}
+                              value={value}
+                              style={{
+                                width: "100%",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {value.length > 100 ? `...${value.slice(-100)}` : value}
+                            </option>
+                          ))}
+                        </datalist>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <button onClick={handleReset}>Reset</button>
+      </div>
 
       {/* Section 5: Table */}
       <div className="section section5">

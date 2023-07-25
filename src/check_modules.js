@@ -1,7 +1,7 @@
 /* 
 The script will read the App.js file, identify the required modules, check 
 if they are installed, and prompt you to install any missing modules. 
-If you choose to install the missing modules, it will use npm install 
+If you choose to install the missing modules, it will use npm  
 to install them for you.
 
 To run:

@@ -3,6 +3,7 @@ import Papa from "papaparse";
 import Modal from "react-modal";
 import RowPopup from "./RowPopup";
 import DataTable from "react-data-table-component";
+import { useDropzone } from "react-dropzone";
 import "./App.css";
 
 const App = () => {
@@ -57,8 +58,9 @@ const App = () => {
     });
   }, [renamedHeaders, hiddenColumns, filterCriteria, searchTerms]);
 
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0];
+  // Create a function to handle file drop using react-dropzone
+  const handleDrop = useCallback((acceptedFiles) => {
+    const file = acceptedFiles[0];
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
@@ -72,14 +74,25 @@ const App = () => {
         setDropdownOptions({});
       },
     });
-  };
+  }, []);
+
+  // Use react-dropzone hook
+  const { getRootProps, getInputProps } = useDropzone({
+    onDrop: handleDrop,
+    accept: ".csv",
+    multiple: false, // Allow only single file drop
+  });
 
   const handleRowClick = (rowData) => {
     setSelectedRowData(rowData);
     setIsModalOpen(true);
   };
 
-  const columns = headers.map((header) => ({
+  // Add the "groupby" column to the headers and columns
+  const groupByColumn = "groupby";
+  const updatedHeaders = [...headers.slice(0, 1), groupByColumn, ...headers.slice(1)];
+
+  const columns = updatedHeaders.map((header) => ({
     name: renamedHeaders[header] || header,
     selector: header,
     sortable: true,
@@ -129,7 +142,7 @@ const App = () => {
       return updatedHeaders;
     });
   };
-
+  // eslint-disable-next-line
   const handleFilterChange = useCallback((event, column) => {
     const value = event.target.value;
     const newColumn = renamedHeaders[column] || column;
@@ -217,7 +230,10 @@ const App = () => {
       <div className="section section2">
         <div className="upload-container">
           <h2>Upload CSV</h2>
-          <input type="file" accept=".csv" onChange={handleFileUpload} />
+          <div {...getRootProps()} className="dropzone">
+            <input {...getInputProps()} />
+            <p>Drag 'n' drop a CSV file here, or click to select a file</p>
+          </div>
         </div>
       </div>
 
@@ -256,67 +272,66 @@ const App = () => {
         </div>
       </div>
 
-{/* Section 4: Filter Section */}
-<div className="section filter-section">
-  <div className="filter-table-container">
-    <table className="filter-table">
-      <tbody>
-        {headers.map((header) => (
-          <React.Fragment key={header}>
-            {!hiddenColumns.includes(header) && (
-              <tr>
-                <td>
-                  <span>{renamedHeaders[header] || header}:</span>
-                </td>
-                <td className="field-name-cell">
-                  <input
-                    type="text"
-                    placeholder={`Search ${renamedHeaders[header] || header}`}
-                    value={searchTerms[header] || ""}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      const newColumn = renamedHeaders[header] || header;
-                      setFilterCriteria((prevCriteria) => ({
-                        ...prevCriteria,
-                        [newColumn]: value,
-                      }));
-                      setSearchTerms((prevSearchTerms) => ({
-                        ...prevSearchTerms,
-                        [header]: value.slice(-100), // Take the latter part of the value
-                      }));
-                    }}
-                    list={`datalist-${header}`}
-                    maxLength={98}
-                    size={95} // Set the input size to 100
-                  />
-                  <datalist id={`datalist-${header}`}>
-                    <option value="All" />
-                    {dropdownOptions[header]?.map((value) => (
-                      <option
-                        key={value}
-                        value={value}
-                        style={{
-                          width: "100%",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {value.length > 100 ? `...${value.slice(-100)}` : value}
-                      </option>
-                    ))}
-                  </datalist>
-                </td>
-              </tr>
-            )}
-          </React.Fragment>
-        ))}
-      </tbody>
-    </table>
-  </div>
-  <button onClick={handleReset}>Reset</button>
-</div>
-
+      {/* Section 4: Filter Section */}
+      <div className="section filter-section">
+        <div className="filter-table-container">
+          <table className="filter-table">
+            <tbody>
+              {headers.map((header) => (
+                <React.Fragment key={header}>
+                  {!hiddenColumns.includes(header) && (
+                    <tr>
+                      <td>
+                        <span>{renamedHeaders[header] || header}:</span>
+                      </td>
+                      <td className="field-name-cell">
+                        <input
+                          type="text"
+                          placeholder={`Search ${renamedHeaders[header] || header}`}
+                          value={searchTerms[header] || ""}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            const newColumn = renamedHeaders[header] || header;
+                            setFilterCriteria((prevCriteria) => ({
+                              ...prevCriteria,
+                              [newColumn]: value,
+                            }));
+                            setSearchTerms((prevSearchTerms) => ({
+                              ...prevSearchTerms,
+                              [header]: value.slice(-100), // Take the latter part of the value
+                            }));
+                          }}
+                          list={`datalist-${header}`}
+                          maxLength={98}
+                          size={95} // Set the input size to 100
+                        />
+                        <datalist id={`datalist-${header}`}>
+                          <option value="All" />
+                          {dropdownOptions[header]?.map((value) => (
+                            <option
+                              key={value}
+                              value={value}
+                              style={{
+                                width: "100%",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {value.length > 100 ? `...${value.slice(-100)}` : value}
+                            </option>
+                          ))}
+                        </datalist>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <button onClick={handleReset}>Reset</button>
+      </div>
 
       {/* Section 5: Table */}
       <div className="section section5">

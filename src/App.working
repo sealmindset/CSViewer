@@ -1,37 +1,42 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Papa from "papaparse";
-import Modal from "react-modal";
-import RowPopup from "./RowPopup";
 import DataTable from "react-data-table-component";
 import { useDropzone } from "react-dropzone";
+import Modal from "react-modal";
+import RowPopup from "./RowPopup";
 import "./App.css";
+
+Modal.setAppElement("#root");
 
 const App = () => {
   const [data, setData] = useState([]);
   const [headers, setHeaders] = useState([]);
   const [renamedHeaders, setRenamedHeaders] = useState({});
-  const [selectedRowData, setSelectedRowData] = useState({});
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [hiddenColumns, setHiddenColumns] = useState([]);
+  const [hiddenColumns, setHiddenColumns] = useState([]); // Initialize hiddenColumns as an empty array
   const [filterCriteria, setFilterCriteria] = useState({});
   const [searchTerms, setSearchTerms] = useState({});
   const [dropdownOptions, setDropdownOptions] = useState({});
   const [initialState, setInitialState] = useState({});
+  const [groupByColumns, setGroupByColumns] = useState({});
+  const [selectedRowData, setSelectedRowData] = useState({});
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [groupedData, setGroupedData] = useState([]);
 
   useEffect(() => {
-    // Refresh filter criteria when renamedHeaders change
+    // Update filter criteria with renamed headers and handle hiddenColumns as an array
     setFilterCriteria((prevCriteria) => {
       const updatedCriteria = {};
-      Object.entries(prevCriteria).forEach(([column, value]) => {
-        const newColumn = renamedHeaders[column] || column;
-        updatedCriteria[newColumn] = value;
+      headers.forEach((header) => {
+        const newColumn = renamedHeaders[header] || header;
+        if (!hiddenColumns.includes(newColumn)) {
+          updatedCriteria[newColumn] = prevCriteria[header];
+        }
       });
       return updatedCriteria;
     });
-  }, [renamedHeaders]);
+  }, [renamedHeaders, hiddenColumns, headers, filterCriteria]);
 
   useEffect(() => {
-    // Update dropdown options when searchTerms change
     setDropdownOptions((prevOptions) => {
       const updatedOptions = { ...prevOptions };
       headers.forEach((header) => {
@@ -49,16 +54,31 @@ const App = () => {
   }, [searchTerms, data, headers, hiddenColumns]);
 
   useEffect(() => {
-    // Save the initial state for reset
     setInitialState({
       renamedHeaders: { ...renamedHeaders },
-      hiddenColumns: [...hiddenColumns],
+      hiddenColumns: [...hiddenColumns], // Clone hiddenColumns as an array
       filterCriteria: { ...filterCriteria },
       searchTerms: { ...searchTerms },
     });
   }, [renamedHeaders, hiddenColumns, filterCriteria, searchTerms]);
 
-  // Create a function to handle file drop using react-dropzone
+  useEffect(() => {
+    const filteredData = data.filter((row) =>
+      headers.every((header) => {
+        const criteria = filterCriteria[header];
+        const searchTerm = searchTerms[header];
+        return (
+          (!criteria || criteria === "All" || row[header] === criteria) &&
+          (!searchTerm || row[header].toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+      })
+    );
+
+    // Apply group by and sort logic
+    const groupedAndSortedData = groupAndSortTableData(filteredData);
+    setGroupedData(groupedAndSortedData);
+  }, [data, headers, filterCriteria, searchTerms]);
+
   const handleDrop = useCallback((acceptedFiles) => {
     const file = acceptedFiles[0];
     Papa.parse(file, {
@@ -72,23 +92,17 @@ const App = () => {
         setFilterCriteria({});
         setSearchTerms({});
         setDropdownOptions({});
+        setGroupByColumns({});
       },
     });
   }, []);
 
-  // Use react-dropzone hook
   const { getRootProps, getInputProps } = useDropzone({
     onDrop: handleDrop,
     accept: ".csv",
-    multiple: false, // Allow only single file drop
+    multiple: false,
   });
 
-  const handleRowClick = (rowData) => {
-    setSelectedRowData(rowData);
-    setIsModalOpen(true);
-  };
-
-  // Add the "groupby" column to the headers and columns
   const groupByColumn = "groupby";
   const updatedHeaders = [...headers.slice(0, 1), groupByColumn, ...headers.slice(1)];
 
@@ -104,77 +118,89 @@ const App = () => {
       }
       return value;
     },
-    omit: hiddenColumns.includes(header),
+    omit: header === groupByColumn || hiddenColumns.includes(header), // Check if header is in hiddenColumns array
     grow: 1,
   }));
 
-  const filteredData = useMemo(() => {
-    if (Object.keys(filterCriteria).length === 0 && Object.keys(searchTerms).length === 0)
-      return data;
-    return data.filter((row) =>
-      headers.every((header) => {
-        const criteria = filterCriteria[header];
-        const searchTerm = searchTerms[header];
-        return (
-          (!criteria || criteria === "All" || row[header] === criteria) &&
-          (!searchTerm || row[header].toLowerCase().includes(searchTerm.toLowerCase()))
-        );
-      })
-    );
-  }, [data, headers, filterCriteria, searchTerms]);
+  const handleRowClick = (row) => {
+    setSelectedRowData(row);
+    setIsModalOpen(true);
+  };
 
   const handleColumnToggle = (event, column) => {
     const isChecked = event.target.checked;
-    setHiddenColumns((prevHidden) => {
+    setHiddenColumns((prevHiddenColumns) => {
       if (isChecked) {
-        return prevHidden.filter((col) => col !== column);
+        // If column is checked, remove it from hiddenColumns array
+        return prevHiddenColumns.filter((hiddenColumn) => hiddenColumn !== column);
       } else {
-        return [...prevHidden, column];
+        // If column is unchecked, add it to hiddenColumns array
+        return [...prevHiddenColumns, column];
       }
     });
-    // Update the renamedHeaders state with the edited field name
     setRenamedHeaders((prevRenamedHeaders) => {
       const updatedHeaders = { ...prevRenamedHeaders };
       if (!isChecked) {
-        // Reset field name to default when column is hidden
         delete updatedHeaders[column];
       }
       return updatedHeaders;
     });
   };
-  // eslint-disable-next-line
-  const handleFilterChange = useCallback((event, column) => {
-    const value = event.target.value;
-    const newColumn = renamedHeaders[column] || column;
-    setFilterCriteria((prevCriteria) => {
-      const updatedCriteria = { ...prevCriteria, [newColumn]: value };
-      if (dropdownOptions[column] && !dropdownOptions[column].includes(value)) {
-        const closestMatch = dropdownOptions[column].find(
-          (option) => option.toLowerCase().startsWith(value.toLowerCase())
-        );
-        if (closestMatch) {
-          updatedCriteria[newColumn] = closestMatch;
+
+
+  const handleGroupByToggle = (event, column) => {
+    const isChecked = event.target.checked;
+    setGroupByColumns((prevGroupByColumns) => ({
+      ...prevGroupByColumns,
+      [column]: isChecked,
+    }));
+  };
+
+  const groupAndSortTableData = (tableData) => {
+    if (Object.keys(groupByColumns).length === 0) {
+      return tableData;
+    }
+
+    const groups = {};
+    tableData.forEach((row) => {
+      const groupKey = Object.entries(groupByColumns)
+        .map(([column, selected]) => (selected ? row[column] : ""))
+        .join("-");
+      if (!groups[groupKey]) {
+        groups[groupKey] = [];
+      }
+      groups[groupKey].push(row);
+    });
+
+    // Sort the data based on the groupBy column and any additional sorting criteria
+    return Object.values(groups).flat().sort((a, b) => {
+      // Sort based on the first selected groupBy column
+      const sortByColumn = Object.entries(groupByColumns).find(([column, selected]) => selected);
+      if (sortByColumn) {
+        const [sortBy, _] = sortByColumn;
+        const aValue = a[sortBy];
+        const bValue = b[sortBy];
+        if (!hiddenColumns.includes(sortBy)) {
+          return aValue.localeCompare(bValue);
         }
       }
-      return updatedCriteria;
+      return 0;
     });
-    setSearchTerms((prevSearchTerms) => ({
-      ...prevSearchTerms,
-      [column]: value,
-    }));
-  }, [renamedHeaders, dropdownOptions]);
+  };
 
+  // Define missing functions
   const handleReset = () => {
     setRenamedHeaders(initialState.renamedHeaders);
     setHiddenColumns(initialState.hiddenColumns);
     setFilterCriteria(initialState.filterCriteria);
     setSearchTerms(initialState.searchTerms);
+    setGroupByColumns({});
   };
 
   const handleDownloadCSV = () => {
-    const visibleData = filteredData.map((row) =>
+    const visibleData = groupedData.map((row) =>
       headers.reduce((acc, header) => {
-        if (!hiddenColumns.includes(header)) {
+        if (!hiddenColumns[header]) {
           const newColumn = renamedHeaders[header] || header;
           acc[newColumn] = row[header];
         }
@@ -196,9 +222,9 @@ const App = () => {
   };
 
   const handleDownloadJSON = () => {
-    const visibleData = filteredData.map((row) =>
+    const visibleData = groupedData.map((row) =>
       headers.reduce((acc, header) => {
-        if (!hiddenColumns.includes(header)) {
+        if (!hiddenColumns[header]) {
           const newColumn = renamedHeaders[header] || header;
           acc[newColumn] = row[header];
         }
@@ -218,6 +244,7 @@ const App = () => {
       document.body.removeChild(link);
     }
   };
+
 
   return (
     <div className="App">
@@ -263,6 +290,13 @@ const App = () => {
                       }
                       maxLength={100}
                       style={{ width: "98%" }} // Set the input width to 100%
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={groupByColumns[header]}
+                      onChange={(e) => handleGroupByToggle(e, header)}
                     />
                   </td>
                 </tr>
@@ -335,14 +369,15 @@ const App = () => {
 
       {/* Section 5: Table */}
       <div className="section section5">
+        {/* ... (content for table section) */}
         <div className="table-container">
           <DataTable
             columns={columns}
-            data={filteredData}
+            data={groupedData} // Replace 'filteredData' with 'groupedData'
             pagination
             paginationPerPage={10}
             onRowClicked={handleRowClick}
-            noHeader={false}
+            noHeader
             customStyles={{
               headCells: {
                 style: {
@@ -376,6 +411,7 @@ const App = () => {
         </div>
       </div>
 
+      {/* Modal */}
       <Modal
         isOpen={isModalOpen}
         onRequestClose={() => setIsModalOpen(false)}

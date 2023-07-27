@@ -60,6 +60,17 @@ body {
   text-align: center;
 }
 
+/* Add this CSS rule to set the width of the "Group By" checkbox */
+.toggle-columns-table td:nth-child(3) {
+  width: 30px;
+  text-align: center;
+}
+
+/* Set the checkbox input back to its normal size */
+.toggle-columns-table input[type="checkbox"] {
+  width: auto;
+}
+
 /* Styles for the Filter Section */
 .filter-section {
   margin-bottom: 10px;

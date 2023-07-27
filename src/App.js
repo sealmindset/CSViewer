@@ -81,25 +81,48 @@ const App = () => {
 
   const handleDrop = useCallback((acceptedFiles) => {
     const file = acceptedFiles[0];
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (result) => {
-        setData(result.data);
-        setHeaders(result.meta.fields);
+    const reader = new FileReader();
+  
+    reader.onload = (event) => {
+      const fileContent = event.target.result;
+      if (file.name.endsWith(".csv")) {
+        // Handle CSV data using Papa.parse as before
+        Papa.parse(fileContent, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (result) => {
+            setData(result.data);
+            setHeaders(result.meta.fields);
+            setRenamedHeaders({});
+            setHiddenColumns([]);
+            setFilterCriteria({});
+            setSearchTerms({});
+            setDropdownOptions({});
+            setGroupByColumns({});
+          },
+        });
+      } else if (file.name.endsWith(".json")) {
+        // Handle JSON data directly
+        const jsonData = JSON.parse(fileContent);
+        setData(jsonData);
+        setHeaders(Object.keys(jsonData[0]));
         setRenamedHeaders({});
         setHiddenColumns([]);
         setFilterCriteria({});
         setSearchTerms({});
         setDropdownOptions({});
         setGroupByColumns({});
-      },
-    });
+      } else {
+        alert("Unsupported file format. Please upload either CSV or JSON file.");
+      }
+    };
+  
+    reader.readAsText(file);
   }, []);
 
   const { getRootProps, getInputProps } = useDropzone({
     onDrop: handleDrop,
-    accept: ".csv",
+    accept: ".csv, .json", // Allow both CSV and JSON files
     multiple: false,
   });
 
@@ -250,16 +273,16 @@ const App = () => {
     <div className="App">
       {/* Section 1: Header or Title - CVS Table Display */}
       <div className="section section1">
-        <h1>CVS Table Display</h1>
+        <h1>CVS | JSON Viewer</h1>
       </div>
 
       {/* Section 2: CVS File Input */}
       <div className="section section2">
         <div className="upload-container">
-          <h2>Upload CSV</h2>
+          <h2>Upload CSV|JSON Formatted File</h2>
           <div {...getRootProps()} className="dropzone">
             <input {...getInputProps()} />
-            <p>Drag 'n' drop a CSV file here, or click to select a file</p>
+            <p>Drag 'n' drop a CSV or JSON file here, or click to select a file</p>
           </div>
         </div>
       </div>
@@ -293,11 +316,15 @@ const App = () => {
                     />
                   </td>
                   <td>
-                    <input
-                      type="checkbox"
-                      checked={groupByColumns[header]}
-                      onChange={(e) => handleGroupByToggle(e, header)}
-                    />
+                    {/* Add "Group By" text next to the checkmark */}
+                    <label>
+                      Group By:
+                      <input
+                        type="checkbox"
+                        checked={groupByColumns[header]}
+                        onChange={(e) => handleGroupByToggle(e, header)}
+                      />
+                    </label>
                   </td>
                 </tr>
               ))}

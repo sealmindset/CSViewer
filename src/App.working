@@ -197,54 +197,54 @@ const App = () => {
     setGroupByColumns({});
   };
 
-  const handleDownloadCSV = () => {
+  const [isFileNameModalOpen, setIsFileNameModalOpen] = useState(false);
+  const [selectedFileFormat, setSelectedFileFormat] = useState("");
+  const [fileName, setFileName] = useState("");
+
+  const promptFileName = (format) => {
+    setSelectedFileFormat(format);
+    setIsFileNameModalOpen(true);
+  };
+
+  const handleFileNameSubmit = () => {
+    setIsFileNameModalOpen(false);
+    if (fileName.trim() !== "") {
+      handleDownload(selectedFileFormat, fileName);
+    }
+  };
+
+  const handleDownload = (format, fileName) => {
     const visibleData = groupedData.map((row) =>
       headers.reduce((acc, header) => {
-        if (!hiddenColumns[header]) {
+        if (!hiddenColumns.includes(header)) {
           const newColumn = renamedHeaders[header] || header;
           acc[newColumn] = row[header];
         }
         return acc;
       }, {})
     );
-    const csv = Papa.unparse(visibleData, { header: true });
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+
+    let dataToExport, fileExtension;
+    if (format === "csv") {
+      dataToExport = Papa.unparse(visibleData, { header: true });
+      fileExtension = "csv";
+    } else if (format === "json") {
+      dataToExport = JSON.stringify(visibleData, null, 2);
+      fileExtension = "json";
+    }
+
+    const blob = new Blob([dataToExport], { type: `text/${fileExtension};charset=utf-8;` });
     const link = document.createElement("a");
     if (link.download !== undefined) {
       const url = URL.createObjectURL(blob);
       link.setAttribute("href", url);
-      link.setAttribute("download", "filtered_data.csv");
+      link.setAttribute("download", `${fileName}.${fileExtension}`);
       link.style.visibility = "hidden";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     }
   };
-
-  const handleDownloadJSON = () => {
-    const visibleData = groupedData.map((row) =>
-      headers.reduce((acc, header) => {
-        if (!hiddenColumns[header]) {
-          const newColumn = renamedHeaders[header] || header;
-          acc[newColumn] = row[header];
-        }
-        return acc;
-      }, {})
-    );
-    const json = JSON.stringify(visibleData, null, 2);
-    const blob = new Blob([json], { type: "application/json;charset=utf-8;" });
-    const link = document.createElement("a");
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", "filtered_data.json");
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  };
-
 
   return (
     <div className="App">
@@ -406,24 +406,32 @@ const App = () => {
       {/* Section 6: Download Buttons for CSV and JSON */}
       <div className="section section6">
         <div className="download-buttons">
-          <button onClick={handleDownloadCSV}>Download CSV</button>
-          <button onClick={handleDownloadJSON}>Download JSON</button>
+          <button onClick={() => promptFileName("csv")}>Download CSV</button>
+          <button onClick={() => promptFileName("json")}>Download JSON</button>
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Modal for FileName */}
       <Modal
-        isOpen={isModalOpen}
-        onRequestClose={() => setIsModalOpen(false)}
-        contentLabel="Selected Row Data"
+        isOpen={isFileNameModalOpen}
+        onRequestClose={() => setIsFileNameModalOpen(false)}
+        contentLabel="Enter Filename"
+        className="filename-modal"
+        overlayClassName="filename-modal-overlay"
       >
-        <RowPopup
-          headers={headers}
-          rowData={selectedRowData}
-          renamedHeaders={renamedHeaders}
-          hiddenColumns={hiddenColumns} // Pass the hiddenColumns state as a prop
-          onClose={() => setIsModalOpen(false)}
-        />
+        <div className="filename-modal-content">
+          <h2>Enter Filename</h2>
+          <div className="filename-input-container">
+            <input
+              type="text"
+              value={fileName}
+              onChange={(e) => setFileName(e.target.value)}
+              placeholder={`Enter filename`}
+            />
+            <span className="file-extension">{`.${selectedFileFormat}`}</span>
+          </div>
+          <button onClick={handleFileNameSubmit}>Submit</button>
+        </div>
       </Modal>
 
     </div>

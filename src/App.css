@@ -31,11 +31,22 @@ body {
   margin-bottom: 20px;
 }
 
-/* Styles for the Toggle and Filter sections */
+/* Add a solid light gray line between section 3 and section 4 */
 .section3-and-4 {
   display: flex;
   justify-content: space-between;
   margin-bottom: 10px;
+  position: relative;
+}
+
+.section3-and-4::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px; /* Adjust the position to align with the bottom border of section 3 */
+  height: 1px;
+  background-color: #ccc;
 }
 
 /* Container for toggle and filter tables */
@@ -62,7 +73,7 @@ body {
 
 /* Add this CSS rule to set the width of the "Group By" checkbox */
 .toggle-columns-table td:nth-child(3) {
-  width: 30px;
+  width: 100px;
   text-align: center;
 }
 
@@ -125,11 +136,10 @@ table {
   border-collapse: collapse;
 }
 
-table,
 td {
-  border: 1px solid black;
   padding: 8px;
   text-align: left; /* Align the content in cells to the left */
+  border-bottom: 1px solid #ccc; /* Add a solid light gray line between rows */
 }
 
 /* Set the checkbox input back to its normal size */

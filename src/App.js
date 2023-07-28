@@ -430,6 +430,25 @@ const App = () => {
         </div>
       </div>
 
+      {/* Modal for displaying the RowPopup */}
+      <Modal
+        isOpen={isModalOpen} // Conditionally show/hide the modal based on isModalOpen state
+        onRequestClose={() => setIsModalOpen(false)} // Close the modal when requested
+        contentLabel="Row Popup"
+        className="row-popup-modal"
+        overlayClassName="row-popup-modal-overlay"
+      >
+        {isModalOpen && (
+          <RowPopup
+            headers={headers}
+            rowData={selectedRowData}
+            renamedHeaders={renamedHeaders}
+            hiddenColumns={hiddenColumns}
+            onClose={() => setIsModalOpen(false)} // Close the modal when the Close button is clicked
+          />
+        )}
+      </Modal>
+
       {/* Section 6: Download Buttons for CSV and JSON */}
       <div className="section section6">
         <div className="download-buttons">

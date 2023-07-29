@@ -1,0 +1,89 @@
+.row-popup-container {
+  background-color: #fff;
+  max-width: 3000px;
+  margin: 8px auto;
+  padding: 8px;
+  border-radius: 4px;
+  position: absolute;
+  top: calc(50% + 100px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Add overlay styles for modal */
+.row-popup-modal-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.6);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9998;
+}
+
+.close-btn {
+  margin-bottom: 10px;
+  padding: 5px 10px;
+  background-color: #f2f2f2;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Styles for the table inside the RowPopup */
+.table-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center items horizontally */
+  margin-top: 20px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 20px;
+  border: none; /* Remove the border from the table */
+}
+
+.header-cell {
+  max-width: 100px;
+  word-wrap: break-word;
+  background-color: #f2f2f2;
+  padding: 8px;
+  font-family: Arial, sans-serif;
+  font-size: 10px;
+  border-bottom: none; /* Add light gray line between rows */
+}
+
+.data-cell {
+  max-width: 150px;
+  word-wrap: break-word;
+  background-color: #fff;
+  padding: 8px;
+  font-family: Arial, sans-serif;
+  font-size: 10px;
+  border-bottom: none; /* Add light gray line between rows */
+}
+
+/* Remove the border from the second column */
+.data-cell:nth-child(2) {
+  border: none;
+}
+
+/* Add light gray line between rows */
+tr:not(:last-child) .data-cell {
+  border-bottom: none; 
+}
+
+/* Remove the border from the last row (to avoid a border below the last row) */
+tr:last-child .data-cell {
+  border-bottom: none;
+}

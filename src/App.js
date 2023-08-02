@@ -4,49 +4,66 @@ import DataTable from "react-data-table-component";
 import { useDropzone } from "react-dropzone";
 import Modal from "react-modal";
 import RowPopup from "./RowPopup";
-import { flattenJSON } from "./utils";
 import "./App.css";
 
 Modal.setAppElement("#root");
 
 const App = () => {
-  // State declarations
   const [data, setData] = useState([]);
   const [headers, setHeaders] = useState([]);
   const [renamedHeaders, setRenamedHeaders] = useState({});
-  const [hiddenColumns, setHiddenColumns] = useState([]);
+  const [hiddenColumns, setHiddenColumns] = useState([]); // Initialize hiddenColumns as an empty array
   const [filterCriteria, setFilterCriteria] = useState({});
   const [searchTerms, setSearchTerms] = useState({});
-  const [groupedData, setGroupedData] = useState([]);
+  const [dropdownOptions, setDropdownOptions] = useState({});
+  const [initialState, setInitialState] = useState({});
+  const [groupByColumns, setGroupByColumns] = useState({});
   const [selectedRowData, setSelectedRowData] = useState({});
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedFileFormat, setSelectedFileFormat] = useState("");
-  const [fileName, setFileName] = useState("");
-  const [isFileNameModalOpen, setIsFileNameModalOpen] = useState(false);
-  const [groupByColumns, setGroupByColumns] = useState({});
+  const [groupedData, setGroupedData] = useState([]);
 
-  // Define dropdownOptions (replace this with your actual options)
-  const dropdownOptions = {};
-
-  // Process uploaded CSV data
   useEffect(() => {
-    if (data.length > 0) {
-      const flattenedData = data.map((row) => {
-        if (row["PROPERTIES"]) {
-          const properties = JSON.parse(row["PROPERTIES"]);
-          delete row["PROPERTIES"];
-          return { ...row, ...flattenJSON(properties) };
+    // Update filter criteria with renamed headers and handle hiddenColumns as an array
+    setFilterCriteria((prevCriteria) => {
+      const updatedCriteria = {};
+      headers.forEach((header) => {
+        const newColumn = renamedHeaders[header] || header;
+        if (!hiddenColumns.includes(newColumn)) {
+          updatedCriteria[newColumn] = prevCriteria[header];
         }
-        return row;
       });
+      return updatedCriteria;
+    });
+  }, [renamedHeaders, hiddenColumns, headers, filterCriteria]);
 
-      setData(flattenedData);
-    }
-  }, [data]);
+  useEffect(() => {
+    setDropdownOptions((prevOptions) => {
+      const updatedOptions = { ...prevOptions };
+      headers.forEach((header) => {
+        if (!hiddenColumns.includes(header)) {
+          const searchTerm = searchTerms[header]?.toLowerCase();
+          const allValues = Array.from(new Set(data.map((row) => row[header])));
+          const filteredValues = allValues.filter(
+            (value) => !searchTerm || value.toLowerCase().includes(searchTerm)
+          );
+          updatedOptions[header] = filteredValues;
+        }
+      });
+      return updatedOptions;
+    });
+  }, [searchTerms, data, headers, hiddenColumns]);
 
-  // Perform filtering based on filterCriteria and searchTerms
-  const filteredData = useCallback(() => {
-    return data.filter((row) =>
+  useEffect(() => {
+    setInitialState({
+      renamedHeaders: { ...renamedHeaders },
+      hiddenColumns: [...hiddenColumns], // Clone hiddenColumns as an array
+      filterCriteria: { ...filterCriteria },
+      searchTerms: { ...searchTerms },
+    });
+  }, [renamedHeaders, hiddenColumns, filterCriteria, searchTerms]);
+
+  useEffect(() => {
+    const filteredData = data.filter((row) =>
       headers.every((header) => {
         const criteria = filterCriteria[header];
         const searchTerm = searchTerms[header];
@@ -56,15 +73,114 @@ const App = () => {
         );
       })
     );
+
+    // Apply group by and sort logic
+    const groupedAndSortedData = groupAndSortTableData(filteredData);
+    setGroupedData(groupedAndSortedData);
   }, [data, headers, filterCriteria, searchTerms]);
 
-  useEffect(() => {
-    setGroupedData(groupAndSortTableData(filteredData(), headers));
-  }, [headers, filteredData]);
+  const handleDrop = useCallback((acceptedFiles) => {
+    const file = acceptedFiles[0];
+    const reader = new FileReader();
+  
+    reader.onload = (event) => {
+      const fileContent = event.target.result;
+      if (file.name.endsWith(".csv")) {
+        // Handle CSV data using Papa.parse as before
+        Papa.parse(fileContent, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (result) => {
+            setData(result.data);
+            setHeaders(result.meta.fields);
+            setRenamedHeaders({});
+            setHiddenColumns([]);
+            setFilterCriteria({});
+            setSearchTerms({});
+            setDropdownOptions({});
+            setGroupByColumns({});
+          },
+        });
+      } else if (file.name.endsWith(".json")) {
+        // Handle JSON data directly
+        const jsonData = JSON.parse(fileContent);
+        setData(jsonData);
+        setHeaders(Object.keys(jsonData[0]));
+        setRenamedHeaders({});
+        setHiddenColumns([]);
+        setFilterCriteria({});
+        setSearchTerms({});
+        setDropdownOptions({});
+        setGroupByColumns({});
+      } else {
+        alert("Unsupported file format. Please upload either CSV or JSON file.");
+      }
+    };
+  
+    reader.readAsText(file);
+  }, []);
 
-  // Group and sort table data based on groupByColumns
-  const groupAndSortTableData = useCallback((tableData, columns) => {
-    if (!tableData || Object.keys(groupByColumns).length === 0) {
+  const { getRootProps, getInputProps } = useDropzone({
+    onDrop: handleDrop,
+    accept: ".csv, .json", // Allow both CSV and JSON files
+    multiple: false,
+  });
+
+  const groupByColumn = "groupby";
+  const updatedHeaders = [...headers.slice(0, 1), groupByColumn, ...headers.slice(1)];
+
+  const columns = updatedHeaders.map((header) => ({
+    name: renamedHeaders[header] || header,
+    selector: header,
+    sortable: true,
+    wrap: true,
+    format: (row) => {
+      const value = row[header];
+      if (value && value.length > 100) {
+        return value.substring(0, 100) + "...";
+      }
+      return value;
+    },
+    omit: header === groupByColumn || hiddenColumns.includes(header), // Check if header is in hiddenColumns array
+    grow: 1,
+  }));
+
+  const handleRowClick = (row) => {
+    setSelectedRowData(row);
+    setIsModalOpen(true);
+  };
+
+  const handleColumnToggle = (event, column) => {
+    const isChecked = event.target.checked;
+    setHiddenColumns((prevHiddenColumns) => {
+      if (isChecked) {
+        // If column is checked, remove it from hiddenColumns array
+        return prevHiddenColumns.filter((hiddenColumn) => hiddenColumn !== column);
+      } else {
+        // If column is unchecked, add it to hiddenColumns array
+        return [...prevHiddenColumns, column];
+      }
+    });
+    setRenamedHeaders((prevRenamedHeaders) => {
+      const updatedHeaders = { ...prevRenamedHeaders };
+      if (!isChecked) {
+        delete updatedHeaders[column];
+      }
+      return updatedHeaders;
+    });
+  };
+
+
+  const handleGroupByToggle = (event, column) => {
+    const isChecked = event.target.checked;
+    setGroupByColumns((prevGroupByColumns) => ({
+      ...prevGroupByColumns,
+      [column]: isChecked,
+    }));
+  };
+
+  const groupAndSortTableData = (tableData) => {
+    if (Object.keys(groupByColumns).length === 0) {
       return tableData;
     }
 
@@ -79,85 +195,35 @@ const App = () => {
       groups[groupKey].push(row);
     });
 
-    return Object.values(groups)
-      .flat()
-      .sort((a, b) => {
-        const sortByColumn = Object.entries(groupByColumns).find(([column, selected]) => selected);
-        if (sortByColumn) {
-          const [sortBy, _] = sortByColumn;
-          const aValue = a[sortBy];
-          const bValue = b[sortBy];
-          if (!hiddenColumns.includes(sortBy)) {
-            return aValue.localeCompare(bValue);
-          }
+    // Sort the data based on the groupBy column and any additional sorting criteria
+    return Object.values(groups).flat().sort((a, b) => {
+      // Sort based on the first selected groupBy column
+      const sortByColumn = Object.entries(groupByColumns).find(([column, selected]) => selected);
+      if (sortByColumn) {
+        const [sortBy, _] = sortByColumn;
+        const aValue = a[sortBy];
+        const bValue = b[sortBy];
+        if (!hiddenColumns.includes(sortBy)) {
+          return aValue.localeCompare(bValue);
         }
-        return 0;
-      });
-  }, [groupByColumns, hiddenColumns]);
-
-  // Handle file drop
-  const handleDrop = useCallback((acceptedFiles) => {
-    const file = acceptedFiles[0];
-    const reader = new FileReader();
-
-    reader.onload = (event) => {
-      const fileContent = event.target.result;
-      if (file.name.endsWith(".csv")) {
-        Papa.parse(fileContent, {
-          header: true,
-          skipEmptyLines: true,
-          complete: (result) => {
-            setData(result.data);
-            setHeaders(Object.keys(result.data[0]));
-          },
-        });
-      } else if (file.name.endsWith(".json")) {
-        const jsonData = JSON.parse(fileContent);
-        setData(jsonData);
-        setHeaders(Object.keys(jsonData[0]));
-      } else {
-        alert("Unsupported file format. Please upload either CSV or JSON file.");
       }
-    };
-
-    reader.readAsText(file);
-  }, []);
-
-  // Handle column toggle
-  const handleColumnToggle = (event, column) => {
-    const isChecked = event.target.checked;
-    setHiddenColumns((prevHiddenColumns) =>
-      isChecked
-        ? prevHiddenColumns.filter((hiddenColumn) => hiddenColumn !== column)
-        : [...prevHiddenColumns, column]
-    );
+      return 0;
+    });
   };
 
-  // Handle group by toggle
-  const handleGroupByToggle = (event, column) => {
-    const isChecked = event.target.checked;
-    setGroupByColumns((prevGroupByColumns) => ({
-      ...prevGroupByColumns,
-      [column]: isChecked,
-    }));
-  };
-
-  // Reset filters and group by selections
+  // Define missing functions
   const handleReset = () => {
-    setRenamedHeaders({});
-    setHiddenColumns([]);
-    setFilterCriteria({});
-    setSearchTerms({});
+    setRenamedHeaders(initialState.renamedHeaders);
+    setHiddenColumns(initialState.hiddenColumns);
+    setFilterCriteria(initialState.filterCriteria);
+    setSearchTerms(initialState.searchTerms);
     setGroupByColumns({});
   };
 
-  // Handle row click
-  const handleRowClick = (row) => {
-    setSelectedRowData(row);
-    setIsModalOpen(true);
-  };
+  const [isFileNameModalOpen, setIsFileNameModalOpen] = useState(false);
+  const [selectedFileFormat, setSelectedFileFormat] = useState("");
+  const [fileName, setFileName] = useState("");
 
-  // Handle file name submission for download
   const promptFileName = (format) => {
     setSelectedFileFormat(format);
     setIsFileNameModalOpen(true);
@@ -170,7 +236,6 @@ const App = () => {
     }
   };
 
-  // Handle CSV or JSON download
   const handleDownload = (format, fileName) => {
     const visibleData = groupedData.map((row) =>
       headers.reduce((acc, header) => {
@@ -204,44 +269,17 @@ const App = () => {
     }
   };
 
-  const { getRootProps, getInputProps } = useDropzone({
-    onDrop: handleDrop,
-  });
-
-  // Define the table columns
-  const groupByColumn = "groupby";
-  const updatedHeaders = [...headers.slice(0, 1), groupByColumn, ...headers.slice(1)];
-  const columns = updatedHeaders.map((header) => {
-    const isPropertiesHeader = header.startsWith("PROPERTIES_");
-    const newColumn = renamedHeaders[header] || header;
-    return {
-      name: isPropertiesHeader ? newColumn.substring("PROPERTIES_".length) : newColumn,
-      selector: header,
-      sortable: true,
-      wrap: true,
-      format: (row) => {
-        const value = row[header];
-        if (value && value.length > 100) {
-          return value.substring(0, 100) + "...";
-        }
-        return value;
-      },
-      omit: header === groupByColumn || hiddenColumns.includes(header),
-      grow: 1,
-    };
-  });
-
   return (
     <div className="App">
-      {/* Section 1: Header or Title - CSV Table Display */}
+      {/* Section 1: Header or Title - CVS Table Display */}
       <div className="section section1">
-        <h1>CSV | JSON Viewer</h1>
+        <h1>CVS | JSON Viewer</h1>
       </div>
 
-      {/* Section 2: CSV File Input */}
+      {/* Section 2: CVS File Input */}
       <div className="section section2">
         <div className="upload-container">
-          <h2>Upload CSV | JSON Formatted File</h2>
+          <h2>Upload CSV|JSON Formatted File</h2>
           <div {...getRootProps()} className="dropzone">
             <input {...getInputProps()} />
             <p>Drag 'n' drop a CSV or JSON file here, or click to select a file</p>
@@ -274,7 +312,7 @@ const App = () => {
                         }))
                       }
                       maxLength={100}
-                      style={{ width: "100%" }} // Set the input width to 100%
+                      style={{ width: "98%" }} // Set the input width to 100%
                     />
                   </td>
                   <td>
@@ -310,7 +348,7 @@ const App = () => {
                       <td className="field-name-cell">
                         <input
                           type="text"
-                          placeholder={`Filter ${renamedHeaders[header] || header}`}
+                          placeholder={`Search ${renamedHeaders[header] || header}`}
                           value={searchTerms[header] || ""}
                           onChange={(e) => {
                             const value = e.target.value;
@@ -321,12 +359,12 @@ const App = () => {
                             }));
                             setSearchTerms((prevSearchTerms) => ({
                               ...prevSearchTerms,
-                              [header]: value,
+                              [header]: value.slice(-100), // Take the latter part of the value
                             }));
                           }}
                           list={`datalist-${header}`}
-                          maxLength={100}
-                          size={95} // Set the input size to 95 instead of 100
+                          maxLength={98}
+                          size={95} // Set the input size to 100
                         />
                         <datalist id={`datalist-${header}`}>
                           <option value="All" />
@@ -362,7 +400,7 @@ const App = () => {
         <div className="table-container">
           <DataTable
             columns={columns}
-            data={filteredData()} // Call the filteredData function to get the filtered data
+            data={groupedData} // Replace 'filteredData' with 'groupedData'
             pagination
             paginationPerPage={10}
             onRowClicked={handleRowClick}
@@ -441,6 +479,7 @@ const App = () => {
           <button onClick={handleFileNameSubmit}>Submit</button>
         </div>
       </Modal>
+
     </div>
   );
 };

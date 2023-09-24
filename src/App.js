@@ -118,7 +118,7 @@ const App = () => {
               return row;
             });
 
-            if (Array.isArray(processedData) && processedData.length > 0 && typeof processedData[0] === 'object') {
+            if (Array.isArray(processedData) && processedData > 0 && typeof processedData[0] === 'object') {
               setHeaders(Object.keys(processedData[0]));
             }
 
@@ -318,7 +318,7 @@ const App = () => {
                                       [header]: e.target.value,
                                   }))
                               }
-                              maxLength={100}
+                              // maxLength={100}
                               style={{ width: "98%" }}
                           />
                       </td>
@@ -370,7 +370,7 @@ const App = () => {
                             }));
                           }}
                           list={`datalist-${header}`}
-                          maxLength={98}
+                          // maxLength={98}
                           size={95} // Set the input size to 100
                         />
                         <datalist id={`datalist-${header}`}>

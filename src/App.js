@@ -426,14 +426,21 @@ const App = () => {
         <button onClick={() => promptFileName("json")}>Download as JSON</button>
       </div>
 
-      {/* Modal for Row Popup */}
+      {/* Section 7: Modal Section */}
       <Modal isOpen={isModalOpen} onRequestClose={() => setIsModalOpen(false)}>
-        <RowPopup data={selectedRowData} onClose={() => setIsModalOpen(false)} />
+        <RowPopup 
+            data={selectedRowData} 
+            headers={headers}
+            renamedHeaders={renamedHeaders}
+            hiddenColumns={hiddenColumns}
+            onClose={() => setIsModalOpen(false)} 
+        />
+
       </Modal>
 
-      {/* Modal for File Name Input */}
+      {/* Section 8: File Name Modal */}
       <Modal isOpen={isFileNameModalOpen} onRequestClose={() => setIsFileNameModalOpen(false)}>
-        <div>
+        <div className="file-name-modal">
           <h2>Enter File Name</h2>
           <input
             type="text"
@@ -441,7 +448,10 @@ const App = () => {
             onChange={(e) => setFileName(e.target.value)}
             placeholder="Enter file name without extension"
           />
-          <button onClick={handleFileNameSubmit}>Submit</button>
+          <div className="file-name-modal-buttons">
+            <button onClick={handleFileNameSubmit}>Submit</button>
+            <button onClick={() => setIsFileNameModalOpen(false)}>Cancel</button>
+          </div>
         </div>
       </Modal>
     </div>

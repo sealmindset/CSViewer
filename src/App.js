@@ -21,7 +21,6 @@ const App = () => {
   const [groupByColumns, setGroupByColumns] = useState({});
   const [selectedRowData, setSelectedRowData] = useState({});
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [groupedData] = useState([]);
 
   // First useEffect for updating filter criteria
   useEffect(() => {
@@ -234,7 +233,7 @@ const App = () => {
   };
 
   const handleDownload = (format, fileName) => {
-    const visibleData = groupedData.map((row) =>
+    const visibleData = groupAndSortTableData(data).map((row) =>
       headers.reduce((acc, header) => {
         if (!hiddenColumns.includes(header)) {
           const newColumn = renamedHeaders[header] || header;
@@ -243,7 +242,7 @@ const App = () => {
         return acc;
       }, {})
     );
-
+  
     let dataToExport, fileExtension;
     if (format === "csv") {
       dataToExport = Papa.unparse(visibleData, { header: true });
@@ -252,7 +251,7 @@ const App = () => {
       dataToExport = JSON.stringify(visibleData, null, 2);
       fileExtension = "json";
     }
-
+  
     const blob = new Blob([dataToExport], { type: `text/${fileExtension};charset=utf-8;` });
     const link = document.createElement("a");
     if (link.download !== undefined) {
@@ -265,6 +264,22 @@ const App = () => {
       document.body.removeChild(link);
     }
   };
+
+  const filteredData = useCallback(() => {
+    return data.filter(row => {
+      for (const header of headers) {
+        // Check if there's a search term for this header and if the row doesn't match the search term
+        if (searchTerms[header] && !String(row[header]).toLowerCase().includes(searchTerms[header].toLowerCase())) {
+          return false;
+        }
+        // Check if there's a filter criteria for this header and if the row doesn't match the filter criteria
+        if (filterCriteria[header] && row[header] !== filterCriteria[header]) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [data, headers, searchTerms, filterCriteria]);
 
   return (
     <div className="App">
@@ -388,7 +403,7 @@ const App = () => {
         <DataTable
           title="CSV|JSON Data"
           columns={columns}
-          data={groupAndSortTableData(data)}
+          data={groupAndSortTableData(filteredData())}
           pagination
           highlightOnHover
           pointerOnHover

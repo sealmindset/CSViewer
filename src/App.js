@@ -21,7 +21,7 @@ const App = () => {
   const [groupByColumns, setGroupByColumns] = useState({});
   const [selectedRowData, setSelectedRowData] = useState({});
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [groupedData, setGroupedData] = useState([]);
+  const [groupedData] = useState([]);
 
   // First useEffect for updating filter criteria
   useEffect(() => {
@@ -87,7 +87,7 @@ const App = () => {
       // Sort based on the first selected groupBy column
       const sortByColumn = Object.entries(groupByColumns).find(([column, selected]) => selected);
       if (sortByColumn) {
-        const [sortBy, _] = sortByColumn;
+        const [sortBy] = sortByColumn;
         const aValue = a[sortBy];
         const bValue = b[sortBy];
         if (!hiddenColumns.includes(sortBy)) {
@@ -369,7 +369,7 @@ const App = () => {
                           <option value="">All</option>
                           {dropdownOptions[header]?.map((option) => (
                             <option key={option} value={option}>
-                              {option}
+                              {typeof option === 'string' && option.length > 100 ? option.substring(0, 100) + "..." : option}
                             </option>
                           ))}
                         </select>

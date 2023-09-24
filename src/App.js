@@ -118,7 +118,7 @@ const App = () => {
               return row;
             });
 
-            if (Array.isArray(processedData) && processedData > 0 && typeof processedData[0] === 'object') {
+            if (Array.isArray(processedData) && processedData.length > 0 && typeof processedData[0] === 'object') {
               setHeaders(Object.keys(processedData[0]));
             }
 
@@ -169,12 +169,8 @@ const App = () => {
     wrap: true,
     format: (row) => {
       const value = row && row[header]; // Add a check for 'row'
-      console.log("Header:", header);
-      console.log("Value:", value);
-      
       return value;
     },
-    
     omit: header === groupByColumn || hiddenColumns.includes(header),
     grow: 1,
   }));
@@ -203,7 +199,6 @@ const App = () => {
       return updatedHeaders;
     });
   };
-
 
   const handleGroupByToggle = (event, column) => {
     const isChecked = event.target.checked;
@@ -294,47 +289,41 @@ const App = () => {
         <div className="toggle-table-container">
           <table className="toggle-columns-table">
             <tbody>
-              {Array.isArray(headers) && headers.map((header) => {
-                const isHidden = Array.isArray(hiddenColumns) && hiddenColumns.includes(header);
-                const renamedHeader = renamedHeaders && typeof renamedHeaders === 'object' ? renamedHeaders[header] || header : header;
-                const isGroupedBy = groupByColumns && typeof groupByColumns === 'object' ? groupByColumns[header] : false;
-
-                return (
-                  <tr key={header}>
-                      <td>
-                          <input
-                              type="checkbox"
-                              checked={!isHidden}
-                              onChange={(e) => handleColumnToggle(e, header)}
-                          />
-                      </td>
-                      <td className="field-name-cell">
-                          <input
-                              type="text"
-                              value={renamedHeader}
-                              onChange={(e) =>
-                                  setRenamedHeaders((prevRenamedHeaders) => ({
-                                      ...prevRenamedHeaders,
-                                      [header]: e.target.value,
-                                  }))
-                              }
-                              // maxLength={100}
-                              style={{ width: "98%" }}
-                          />
-                      </td>
-                      <td>
-                          <label>
-                              Group By:
-                              <input
-                                  type="checkbox"
-                                  checked={isGroupedBy}
-                                  onChange={(e) => handleGroupByToggle(e, header)}
-                              />
-                          </label>
-                      </td>
-                  </tr>
-              );
-              })}
+              {Array.isArray(headers) && headers.map((header) => (
+                <tr key={header}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={!hiddenColumns.includes(header)}
+                      onChange={(e) => handleColumnToggle(e, header)}
+                    />
+                  </td>
+                  <td className="field-name-cell">
+                    <input
+                      type="text"
+                      value={renamedHeaders[header] || header}
+                      onChange={(e) =>
+                        setRenamedHeaders((prevRenamedHeaders) => ({
+                          ...prevRenamedHeaders,
+                          [header]: e.target.value,
+                        }))
+                      }
+                      maxLength={100}
+                      style={{ width: "98%" }}
+                    />
+                  </td>
+                  <td>
+                    <label>
+                      Group By:
+                      <input
+                        type="checkbox"
+                        checked={groupByColumns[header]}
+                        onChange={(e) => handleGroupByToggle(e, header)}
+                      />
+                    </label>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -358,38 +347,32 @@ const App = () => {
                           placeholder={`Search ${renamedHeaders[header] || header}`}
                           value={searchTerms[header] || ""}
                           onChange={(e) => {
-                            const value = e.target.value;
-                            const newColumn = renamedHeaders[header] || header;
-                            setFilterCriteria((prevCriteria) => ({
-                              ...prevCriteria,
-                              [newColumn]: value,
-                            }));
                             setSearchTerms((prevSearchTerms) => ({
                               ...prevSearchTerms,
-                              [header]: value.slice(-100), // Take the latter part of the value
+                              [header]: e.target.value,
                             }));
                           }}
-                          list={`datalist-${header}`}
-                          // maxLength={98}
-                          size={95} // Set the input size to 100
+                          maxLength={100}
+                          style={{ width: "98%" }}
                         />
-                        <datalist id={`datalist-${header}`}>
-                          <option value="All" />
-                          {dropdownOptions[header]?.map((value) => (
-                            <option
-                              key={value}
-                              value={value}
-                              style={{
-                                width: "100%",
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                              }}
-                            >
-                              {value.length > 100 ? `...${value.slice(-100)}` : value}
+                      </td>
+                      <td>
+                        <select
+                          value={filterCriteria[header] || ""}
+                          onChange={(e) => {
+                            setFilterCriteria((prevFilterCriteria) => ({
+                              ...prevFilterCriteria,
+                              [header]: e.target.value,
+                            }));
+                          }}
+                        >
+                          <option value="">All</option>
+                          {dropdownOptions[header]?.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
                             </option>
                           ))}
-                        </datalist>
+                        </select>
                       </td>
                     </tr>
                   )}
@@ -398,95 +381,46 @@ const App = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Section 5: Table Section */}
+      <div className="section table-section">
+        <DataTable
+          title="CSV|JSON Data"
+          columns={columns}
+          data={groupAndSortTableData(data)}
+          pagination
+          highlightOnHover
+          pointerOnHover
+          onRowClicked={handleRowClick}
+        />
+      </div>
+
+      {/* Section 6: Reset and Download Section */}
+      <div className="section reset-download-section">
         <button onClick={handleReset}>Reset</button>
+        <button onClick={() => promptFileName("csv")}>Download as CSV</button>
+        <button onClick={() => promptFileName("json")}>Download as JSON</button>
       </div>
 
-      {/* Section 5: Table */}
-      <div className="section section5">
-        {/* ... (content for table section) */}
-        <div className="table-container">
-          <DataTable
-            columns={columns}
-            data={groupedData} // Replace 'filteredData' with 'groupedData'
-            pagination
-            paginationPerPage={10}
-            onRowClicked={handleRowClick}
-            noHeader
-            customStyles={{
-              headCells: {
-                style: {
-                  paddingLeft: "8px",
-                  paddingRight: "8px",
-                  paddingTop: "8px",
-                  paddingBottom: "8px",
-                  fontWeight: "bold",
-                  textAlign: "left",
-                },
-              },
-              cells: {
-                style: {
-                  paddingLeft: "8px",
-                  paddingRight: "8px",
-                  paddingTop: "8px",
-                  paddingBottom: "8px",
-                  textAlign: "left",
-                },
-              },
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Modal for displaying the RowPopup */}
-      <Modal
-        isOpen={isModalOpen} // Conditionally show/hide the modal based on isModalOpen state
-        onRequestClose={() => setIsModalOpen(false)} // Close the modal when requested
-        contentLabel="Row Popup"
-        className="row-popup-modal"
-        overlayClassName="row-popup-modal-overlay"
-      >
-        {isModalOpen && (
-          <RowPopup
-            headers={headers}
-            rowData={selectedRowData}
-            renamedHeaders={renamedHeaders}
-            hiddenColumns={hiddenColumns}
-            onClose={() => setIsModalOpen(false)} // Close the modal when the Close button is clicked
-          />
-        )}
+      {/* Modal for Row Popup */}
+      <Modal isOpen={isModalOpen} onRequestClose={() => setIsModalOpen(false)}>
+        <RowPopup data={selectedRowData} onClose={() => setIsModalOpen(false)} />
       </Modal>
 
-      {/* Section 6: Download Buttons for CSV and JSON */}
-      <div className="section section6">
-        <div className="download-buttons">
-          <button onClick={() => promptFileName("csv")}>Download CSV</button>
-          <button onClick={() => promptFileName("json")}>Download JSON</button>
-        </div>
-      </div>
-
-      {/* Modal for FileName */}
-      <Modal
-        isOpen={isFileNameModalOpen}
-        onRequestClose={() => setIsFileNameModalOpen(false)}
-        contentLabel="Enter Filename"
-        className="filename-modal"
-        overlayClassName="filename-modal-overlay"
-      >
-        <div className="filename-modal-content">
-          <h2>Enter Filename</h2>
-          <div className="filename-input-container">
-            <input
-              type="text"
-              value={fileName}
-              onChange={(e) => setFileName(e.target.value)}
-              placeholder={`Enter filename`}
-            />
-            <span className="file-extension">{`.${selectedFileFormat}`}</span>
-          </div>
+      {/* Modal for File Name Input */}
+      <Modal isOpen={isFileNameModalOpen} onRequestClose={() => setIsFileNameModalOpen(false)}>
+        <div>
+          <h2>Enter File Name</h2>
+          <input
+            type="text"
+            value={fileName}
+            onChange={(e) => setFileName(e.target.value)}
+            placeholder="Enter file name without extension"
+          />
           <button onClick={handleFileNameSubmit}>Submit</button>
         </div>
       </Modal>
-
     </div>
   );
 };

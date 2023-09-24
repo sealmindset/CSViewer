@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Papa from 'papaparse';
 import axios from 'axios';
@@ -24,6 +23,7 @@ const flattenProperties = (data, prefix = '') => {
     const parsedData = JSON.parse(data);
     flattenObject(parsedData, prefix);
   } catch (error) {
+    console.warn('Error parsing JSON in flattenProperties for data:', data, 'Error:', error);
     // Treat the data as a simple key-value pair
     const [key, value] = data.split(':').map((item) => item.trim());
     const newKey = prefix ? `${prefix}_${key}` : key;
@@ -38,26 +38,29 @@ const mergeRow = (flattenedProperties, originalRow) => {
 
   // Check if the PROPERTIES column exists in the originalRow and is a valid JSON string
   if (originalRow.hasOwnProperty('PROPERTIES')) {
+    let properties;
     try {
-      const properties = JSON.parse(originalRow.PROPERTIES);
-      if (typeof properties === 'object' && properties !== null) {
-        // Merge properties object with newRow, handling nested objects
-        const mergeObjects = (obj, parentKey = '') => {
-          for (const key in obj) {
-            const value = obj[key];
-            const newKey = parentKey ? `${parentKey}_${key}` : key;
-
-            if (typeof value === 'object' && value !== null) {
-              mergeObjects(value, newKey);
-            } else {
-              newRow[newKey] = value;
-            }
-          }
-        };
-        mergeObjects(properties);
-      }
+      properties = JSON.parse(originalRow.PROPERTIES);
     } catch (error) {
       console.warn('Error parsing PROPERTIES column:', error);
+      properties = null;
+    }
+
+    if (properties && typeof properties === 'object') {
+      // Merge properties object with newRow, handling nested objects
+      const mergeObjects = (obj, parentKey = '') => {
+        for (const key in obj) {
+          const value = obj[key];
+          const newKey = parentKey ? `${parentKey}_${key}` : key;
+
+          if (typeof value === 'object' && value !== null) {
+            mergeObjects(value, newKey);
+          } else {
+            newRow[newKey] = value;
+          }
+        }
+      };
+      mergeObjects(properties);
     }
   }
 
@@ -68,7 +71,6 @@ const mergeRow = (flattenedProperties, originalRow) => {
 
   return newRow;
 };
-
 
 const CSVProcessor = () => {
   const [inputFile, setInputFile] = useState(null);

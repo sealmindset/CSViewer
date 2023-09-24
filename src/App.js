@@ -284,12 +284,12 @@ const App = () => {
   return (
     <div className="App">
       {/* Section 1: Header or Title - CVS Table Display */}
-      <div className="section section1">
+      <div className="header">
         <h1>CVS | JSON Viewer</h1>
       </div>
 
       {/* Section 2: CVS File Input */}
-      <div className="section section2">
+      <div className="upload">
         <div className="upload-container">
           <h2>Upload CSV|JSON Formatted File</h2>
           <div {...getRootProps()} className="dropzone">
@@ -299,53 +299,56 @@ const App = () => {
         </div>
       </div>
 
-      {/* Section 3: Toggle Section */}
-      <div className="section toggle-section">
+       {/* Section 3: Toggle Section */}
+       <div className="toggle">
         <div className="toggle-table-container">
           <table className="toggle-columns-table">
             <tbody>
-              {Array.isArray(headers) && headers.map((header) => (
-                <tr key={header}>
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={!hiddenColumns.includes(header)}
-                      onChange={(e) => handleColumnToggle(e, header)}
-                    />
-                  </td>
-                  <td className="field-name-cell">
-                    <input
-                      type="text"
-                      value={renamedHeaders[header] || header}
-                      onChange={(e) =>
-                        setRenamedHeaders((prevRenamedHeaders) => ({
-                          ...prevRenamedHeaders,
-                          [header]: e.target.value,
-                        }))
-                      }
-                      maxLength={100}
-                      style={{ width: "98%" }}
-                    />
-                  </td>
-                  <td>
-                    <label>
-                      Group By:
+              {Array.isArray(headers) && headers.map((header) => {
+                const truncatedHeaderValue = (renamedHeaders[header] || header).substring(0, 100);
+                return (
+                  <tr key={header}>
+                    <td>
                       <input
                         type="checkbox"
-                        checked={groupByColumns[header]}
-                        onChange={(e) => handleGroupByToggle(e, header)}
+                        checked={!hiddenColumns.includes(header)}
+                        onChange={(e) => handleColumnToggle(e, header)}
                       />
-                    </label>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="field-name-cell">
+                      <input
+                        type="text"
+                        className="rename-input"
+                        value={truncatedHeaderValue}
+                        onChange={(e) =>
+                          setRenamedHeaders((prevRenamedHeaders) => ({
+                            ...prevRenamedHeaders,
+                            [header]: e.target.value,
+                          }))
+                        }
+                        maxLength={100}
+                      />
+                    </td>
+                    <td>
+                      <label>
+                        Group By:
+                        <input
+                          type="checkbox"
+                          checked={groupByColumns[header]}
+                          onChange={(e) => handleGroupByToggle(e, header)}
+                        />
+                      </label>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       </div>
 
       {/* Section 4: Filter Section */}
-      <div className="section filter-section">
+      <div className="filter">
         <div className="filter-table-container">
           <table className="filter-table">
             <tbody>
@@ -382,11 +385,16 @@ const App = () => {
                           }}
                         >
                           <option value="">All</option>
-                          {dropdownOptions[header]?.map((option) => (
-                            <option key={option} value={option}>
-                              {typeof option === 'string' && option.length > 100 ? option.substring(0, 100) + "..." : option}
-                            </option>
-                          ))}
+                          {dropdownOptions[header]?.map((option) => {
+                              if (!option) return null;  // Add this line to handle undefined or null options
+                              const truncatedOption = option.length > 100 ? option.substring(0, 100) + "..." : option;
+                              return (
+                                  <option key={option} value={option}>
+                                      {truncatedOption}
+                                  </option>
+                              );
+                          })}
+
                         </select>
                       </td>
                     </tr>
@@ -399,7 +407,7 @@ const App = () => {
       </div>
 
       {/* Section 5: Table Section */}
-      <div className="section table-section">
+      <div className="table-section">
         <DataTable
           title="CSV|JSON Data"
           columns={columns}
@@ -412,7 +420,7 @@ const App = () => {
       </div>
 
       {/* Section 6: Reset and Download Section */}
-      <div className="section reset-download-section">
+      <div className="download">
         <button onClick={handleReset}>Reset</button>
         <button onClick={() => promptFileName("csv")}>Download as CSV</button>
         <button onClick={() => promptFileName("json")}>Download as JSON</button>

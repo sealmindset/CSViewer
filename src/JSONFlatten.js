@@ -142,4 +142,4 @@ const CSVProcessor = () => {
   );
 };
 
-export default CSVProcessor;
+export { flattenProperties, mergeRow };

@@ -4,6 +4,7 @@ import DataTable from "react-data-table-component";
 import { useDropzone } from "react-dropzone";
 import Modal from "react-modal";
 import RowPopup from "./RowPopup";
+import { flattenProperties, mergeRow } from './JSONFlatten';
 import "./App.css";
 
 Modal.setAppElement("#root");
@@ -12,7 +13,7 @@ const App = () => {
   const [data, setData] = useState([]);
   const [headers, setHeaders] = useState([]);
   const [renamedHeaders, setRenamedHeaders] = useState({});
-  const [hiddenColumns, setHiddenColumns] = useState([]); // Initialize hiddenColumns as an empty array
+  const [hiddenColumns, setHiddenColumns] = useState([]);
   const [filterCriteria, setFilterCriteria] = useState({});
   const [searchTerms, setSearchTerms] = useState({});
   const [dropdownOptions, setDropdownOptions] = useState({});
@@ -22,8 +23,8 @@ const App = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [groupedData, setGroupedData] = useState([]);
 
+  // First useEffect for updating filter criteria
   useEffect(() => {
-    // Update filter criteria with renamed headers and handle hiddenColumns as an array
     setFilterCriteria((prevCriteria) => {
       const updatedCriteria = {};
       headers.forEach((header) => {
@@ -36,6 +37,7 @@ const App = () => {
     });
   }, [renamedHeaders, hiddenColumns, headers, filterCriteria]);
 
+  // Second useEffect for updating dropdown options
   useEffect(() => {
     setDropdownOptions((prevOptions) => {
       const updatedOptions = { ...prevOptions };
@@ -53,6 +55,7 @@ const App = () => {
     });
   }, [searchTerms, data, headers, hiddenColumns]);
 
+  // Third useEffect for setting initial state
   useEffect(() => {
     setInitialState({
       renamedHeaders: { ...renamedHeaders },
@@ -62,37 +65,64 @@ const App = () => {
     });
   }, [renamedHeaders, hiddenColumns, filterCriteria, searchTerms]);
 
-  useEffect(() => {
-    const filteredData = data.filter((row) =>
-      headers.every((header) => {
-        const criteria = filterCriteria[header];
-        const searchTerm = searchTerms[header];
-        return (
-          (!criteria || criteria === "All" || row[header] === criteria) &&
-          (!searchTerm || row[header].toLowerCase().includes(searchTerm.toLowerCase()))
-        );
-      })
-    );
+  // Function to group and sort table data
+  const groupAndSortTableData = useCallback((tableData) => {
+    if (Object.keys(groupByColumns).length === 0) {
+      return tableData;
+    }
 
-    // Apply group by and sort logic
-    const groupedAndSortedData = groupAndSortTableData(filteredData);
-    setGroupedData(groupedAndSortedData);
-  }, [data, headers, filterCriteria, searchTerms]);
+    const groups = {};
+    tableData.forEach((row) => {
+      const groupKey = Object.entries(groupByColumns)
+        .map(([column, selected]) => (selected ? row[column] : ""))
+        .join("-");
+      if (!groups[groupKey]) {
+        groups[groupKey] = [];
+      }
+      groups[groupKey].push(row);
+    });
 
+    // Sort the data based on the groupBy column and any additional sorting criteria
+    return Object.values(groups).flat().sort((a, b) => {
+      // Sort based on the first selected groupBy column
+      const sortByColumn = Object.entries(groupByColumns).find(([column, selected]) => selected);
+      if (sortByColumn) {
+        const [sortBy, _] = sortByColumn;
+        const aValue = a[sortBy];
+        const bValue = b[sortBy];
+        if (!hiddenColumns.includes(sortBy)) {
+          return aValue.localeCompare(bValue);
+        }
+      }
+      return 0;
+    });
+  }, [groupByColumns, hiddenColumns]);
+
+  // Function to handle file drop
   const handleDrop = useCallback((acceptedFiles) => {
     const file = acceptedFiles[0];
     const reader = new FileReader();
-  
+
     reader.onload = (event) => {
       const fileContent = event.target.result;
       if (file.name.endsWith(".csv")) {
-        // Handle CSV data using Papa.parse as before
         Papa.parse(fileContent, {
           header: true,
           skipEmptyLines: true,
           complete: (result) => {
-            setData(result.data);
-            setHeaders(result.meta.fields);
+            const processedData = result.data.map(row => {
+              if (row.PROPERTIES) {
+                const flattenedProperties = flattenProperties(row.PROPERTIES);
+                return mergeRow(flattenedProperties, row);
+              }
+              return row;
+            });
+
+            if (Array.isArray(processedData) && processedData.length > 0 && typeof processedData[0] === 'object') {
+              setHeaders(Object.keys(processedData[0]));
+            }
+
+            setData(processedData);
             setRenamedHeaders({});
             setHiddenColumns([]);
             setFilterCriteria({});
@@ -102,10 +132,13 @@ const App = () => {
           },
         });
       } else if (file.name.endsWith(".json")) {
-        // Handle JSON data directly
         const jsonData = JSON.parse(fileContent);
+
+        if (Array.isArray(jsonData) && jsonData.length > 0 && typeof jsonData[0] === 'object') {
+          setHeaders(Object.keys(jsonData[0]));
+        }
+
         setData(jsonData);
-        setHeaders(Object.keys(jsonData[0]));
         setRenamedHeaders({});
         setHiddenColumns([]);
         setFilterCriteria({});
@@ -116,7 +149,7 @@ const App = () => {
         alert("Unsupported file format. Please upload either CSV or JSON file.");
       }
     };
-  
+
     reader.readAsText(file);
   }, []);
 
@@ -135,13 +168,14 @@ const App = () => {
     sortable: true,
     wrap: true,
     format: (row) => {
-      const value = row[header];
-      if (value && value.length > 100) {
-        return value.substring(0, 100) + "...";
-      }
+      const value = row && row[header]; // Add a check for 'row'
+      console.log("Header:", header);
+      console.log("Value:", value);
+      
       return value;
     },
-    omit: header === groupByColumn || hiddenColumns.includes(header), // Check if header is in hiddenColumns array
+    
+    omit: header === groupByColumn || hiddenColumns.includes(header),
     grow: 1,
   }));
 
@@ -177,38 +211,6 @@ const App = () => {
       ...prevGroupByColumns,
       [column]: isChecked,
     }));
-  };
-
-  const groupAndSortTableData = (tableData) => {
-    if (Object.keys(groupByColumns).length === 0) {
-      return tableData;
-    }
-
-    const groups = {};
-    tableData.forEach((row) => {
-      const groupKey = Object.entries(groupByColumns)
-        .map(([column, selected]) => (selected ? row[column] : ""))
-        .join("-");
-      if (!groups[groupKey]) {
-        groups[groupKey] = [];
-      }
-      groups[groupKey].push(row);
-    });
-
-    // Sort the data based on the groupBy column and any additional sorting criteria
-    return Object.values(groups).flat().sort((a, b) => {
-      // Sort based on the first selected groupBy column
-      const sortByColumn = Object.entries(groupByColumns).find(([column, selected]) => selected);
-      if (sortByColumn) {
-        const [sortBy, _] = sortByColumn;
-        const aValue = a[sortBy];
-        const bValue = b[sortBy];
-        if (!hiddenColumns.includes(sortBy)) {
-          return aValue.localeCompare(bValue);
-        }
-      }
-      return 0;
-    });
   };
 
   // Define missing functions
@@ -292,42 +294,47 @@ const App = () => {
         <div className="toggle-table-container">
           <table className="toggle-columns-table">
             <tbody>
-              {headers.map((header) => (
-                <tr key={header}>
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={!hiddenColumns.includes(header)}
-                      onChange={(e) => handleColumnToggle(e, header)}
-                    />
-                  </td>
-                  <td className="field-name-cell">
-                    <input
-                      type="text"
-                      value={renamedHeaders[header] || header}
-                      onChange={(e) =>
-                        setRenamedHeaders((prevRenamedHeaders) => ({
-                          ...prevRenamedHeaders,
-                          [header]: e.target.value,
-                        }))
-                      }
-                      maxLength={100}
-                      style={{ width: "98%" }} // Set the input width to 100%
-                    />
-                  </td>
-                  <td>
-                    {/* Add "Group By" text next to the checkmark */}
-                    <label>
-                      Group By:
-                      <input
-                        type="checkbox"
-                        checked={groupByColumns[header]}
-                        onChange={(e) => handleGroupByToggle(e, header)}
-                      />
-                    </label>
-                  </td>
-                </tr>
-              ))}
+              {Array.isArray(headers) && headers.map((header) => {
+                const isHidden = Array.isArray(hiddenColumns) && hiddenColumns.includes(header);
+                const renamedHeader = renamedHeaders && typeof renamedHeaders === 'object' ? renamedHeaders[header] || header : header;
+                const isGroupedBy = groupByColumns && typeof groupByColumns === 'object' ? groupByColumns[header] : false;
+
+                return (
+                  <tr key={header}>
+                      <td>
+                          <input
+                              type="checkbox"
+                              checked={!isHidden}
+                              onChange={(e) => handleColumnToggle(e, header)}
+                          />
+                      </td>
+                      <td className="field-name-cell">
+                          <input
+                              type="text"
+                              value={renamedHeader}
+                              onChange={(e) =>
+                                  setRenamedHeaders((prevRenamedHeaders) => ({
+                                      ...prevRenamedHeaders,
+                                      [header]: e.target.value,
+                                  }))
+                              }
+                              maxLength={100}
+                              style={{ width: "98%" }}
+                          />
+                      </td>
+                      <td>
+                          <label>
+                              Group By:
+                              <input
+                                  type="checkbox"
+                                  checked={isGroupedBy}
+                                  onChange={(e) => handleGroupByToggle(e, header)}
+                              />
+                          </label>
+                      </td>
+                  </tr>
+              );
+              })}
             </tbody>
           </table>
         </div>

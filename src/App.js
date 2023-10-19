@@ -104,6 +104,7 @@ const App = () => {
 
     reader.onload = (event) => {
       const fileContent = event.target.result;
+
       if (file.name.endsWith(".csv")) {
         Papa.parse(fileContent, {
           header: true,
@@ -116,6 +117,26 @@ const App = () => {
               }
               return row;
             });
+
+            let maxKeys = 0;
+            let modelRow = null;
+
+            processedData.forEach(row => {
+              if (row.PROPERTIES) {
+                const flattenedProperties = flattenProperties(row.PROPERTIES);
+                const keysCount = Object.keys(flattenedProperties).length;
+                if (keysCount > maxKeys) {
+                  maxKeys = keysCount;
+                  modelRow = flattenedProperties;
+                }
+              }
+            });
+
+            if (modelRow) {
+              // Use modelRow to generate additional column headers
+              const newHeaders = [...Object.keys(modelRow), ...headers];
+              setHeaders(newHeaders);
+            }
 
             if (Array.isArray(processedData) && processedData.length > 0 && typeof processedData[0] === 'object') {
               setHeaders(Object.keys(processedData[0]));
@@ -150,7 +171,7 @@ const App = () => {
     };
 
     reader.readAsText(file);
-  }, []);
+  }, [headers]);
 
   const { getRootProps, getInputProps } = useDropzone({
     onDrop: handleDrop,

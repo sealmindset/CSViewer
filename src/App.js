@@ -118,12 +118,18 @@ const App = () => {
               return row;
             });
 
+            console.log("Processed Data:", processedData);  // Debugging log
+
             let maxKeys = 0;
             let modelRow = null;
 
             processedData.forEach(row => {
+              console.log("Current Row:", row);  // Debugging log
+
               if (row.PROPERTIES) {
                 const flattenedProperties = flattenProperties(row.PROPERTIES);
+                console.log("Flattened Properties:", flattenedProperties);  // Debugging log
+
                 const keysCount = Object.keys(flattenedProperties).length;
                 if (keysCount > maxKeys) {
                   maxKeys = keysCount;

@@ -170,3 +170,27 @@ td {
 .table-container {
   overflow-x: auto;
 }
+
+.toggle-table-container,
+.filter-table-container {
+  max-height: 600px; /* 30px * 20 rows = 600px */
+  overflow-y: auto;
+}
+
+/* Set a specific width for the first and second columns */
+.toggle-columns-table td:nth-child(1),
+.toggle-columns-table td:nth-child(2) {
+  width: 40%; /* Adjust this value as needed */
+}
+
+/* Set a specific width for the third column */
+.toggle-columns-table td:nth-child(3) {
+  width: 20%; /* Adjust this value as needed */
+}
+
+/* Style to align the checkbox and label to the right */
+.group-by-label {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}

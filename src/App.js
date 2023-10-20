@@ -22,6 +22,10 @@ const App = () => {
   const [selectedRowData, setSelectedRowData] = useState({});
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const [toggleCurrentPage, setToggleCurrentPage] = useState(1);
+  const [filterCurrentPage, setFilterCurrentPage] = useState(1);
+  const rowsPerPage = 20;
+
   // First useEffect for updating filter criteria
   useEffect(() => {
     setFilterCriteria((prevCriteria) => {
@@ -371,6 +375,7 @@ const App = () => {
        <div className="toggle">
         <div className="toggle-table-container">
           <table className="toggle-columns-table">
+            {/* Toggle Section */}
             <tbody>
               {Array.isArray(headers) && headers.map((header) => {
                 const truncatedHeaderValue = (renamedHeaders[header] || header).substring(0, 100);
@@ -397,7 +402,7 @@ const App = () => {
                         maxLength={100}
                       />
                     </td>
-                    <td>
+                    <td className="group-by-label">
                       <label>
                         Group By:
                         <input

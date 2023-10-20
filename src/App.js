@@ -101,8 +101,10 @@ const App = () => {
   const handleDrop = useCallback((acceptedFiles) => {
     const file = acceptedFiles[0];
     const reader = new FileReader();
-    const ignoredKeys = ['lenses', 'metadata'];
-  
+    const ignoredKeys = ['lenses', 'metadata', 'subnets']  
+    // Define the array of columns to be unchecked by default
+    const columnsToUncheck = ['ID', 'TYPE', 'TENANTID', 'KIND', 'LOCATION', 'MANAGEDBY', 'SKU', 'PLAN', 'IDENTITY', 'ZONES', 'EXTENDEDLOCATION'];
+    
     reader.onload = (event) => {
       const fileContent = event.target.result;
   
@@ -119,7 +121,12 @@ const App = () => {
               // Process PROPERTIES column
               if (row.PROPERTIES) {
                 const flattenedProperties = flattenProperties(row.PROPERTIES);
-                newRow = { ...newRow, ...flattenedProperties };
+                const filteredProperties = Object.fromEntries(
+                  Object.entries(flattenedProperties).filter(
+                    ([key]) => !ignoredKeys.some(ignoredKey => key.startsWith(ignoredKey))
+                  )
+                );
+                newRow = { ...newRow, ...filteredProperties };
               }
   
               // Process TAGS column
@@ -141,7 +148,9 @@ const App = () => {
               if (row.PROPERTIES) {
                 const flattenedProperties = flattenProperties(row.PROPERTIES);
                 const keysCount = Object.keys(flattenedProperties).length;
-                if (keysCount > maxPropertyKeys) {
+                const firstKey = Object.keys(flattenedProperties)[0];
+            
+                if (keysCount > maxPropertyKeys && !ignoredKeys.some(ignoredKey => firstKey.startsWith(ignoredKey))) {
                   maxPropertyKeys = keysCount;
                   modelPropertyRow = flattenedProperties;
                 }
@@ -164,12 +173,25 @@ const App = () => {
             if (modelTagRow) {
               newHeaders = [...newHeaders, ...Object.keys(modelTagRow)];
             }
+
+            // Identify columns with all null or empty values
+            const emptyColumns = newHeaders.reduce((acc, header) => {
+              const allEmpty = processedData.every(row => 
+                row[header] == null || 
+                (typeof row[header] === 'string' && row[header].trim() === '') ||
+                (Array.isArray(row[header]) && row[header].length === 0)
+              );
+              if (allEmpty) {
+                acc.push(header);
+              }
+              return acc;
+            }, []);
+
   
             setHeaders(newHeaders);
-  
             setData(processedData);
             setRenamedHeaders({});
-            setHiddenColumns([]);
+            setHiddenColumns([...new Set([...emptyColumns, ...columnsToUncheck])]);
             setFilterCriteria({});
             setSearchTerms({});
             setDropdownOptions({});

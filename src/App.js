@@ -26,6 +26,8 @@ const App = () => {
   const [filterCurrentPage, setFilterCurrentPage] = useState(1);
   const rowsPerPage = 20;
 
+  const [isLoading, setIsLoading] = useState(false);
+
   // First useEffect for updating filter criteria
   useEffect(() => {
     setFilterCriteria((prevCriteria) => {
@@ -103,6 +105,7 @@ const App = () => {
 
   // Function to handle file drop
   const handleDrop = useCallback((acceptedFiles) => {
+    setIsLoading(true);  // Set loading to true
     const file = acceptedFiles[0];
     const reader = new FileReader();
     const ignoredKeys = ['lenses', 'metadata', 'subnets']  
@@ -219,9 +222,11 @@ const App = () => {
       } else {
         alert("Unsupported file format. Please upload either CSV or JSON file.");
       }
+      setIsLoading(false);  // Set loading to false
     };
 
     reader.readAsText(file);
+   
   }, []);
 
   const { getRootProps, getInputProps } = useDropzone({
@@ -359,7 +364,7 @@ const App = () => {
       <div className="header">
         <h1>CVS | JSON Viewer</h1>
       </div>
-
+     
       {/* Section 2: CVS File Input */}
       <div className="upload">
         <div className="upload-container">
@@ -368,8 +373,11 @@ const App = () => {
             <input {...getInputProps()} />
             <p>Drag 'n' drop a CSV or JSON file here, or click to select a file</p>
           </div>
+
         </div>
       </div>
+
+      {isLoading && <div className="spinner"></div>}
 
        {/* Section 3: Toggle Section */}
        <div className="toggle">

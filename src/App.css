@@ -20,15 +20,15 @@ body {
 /* === Grid Layout === */
 .App {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: .9fr 1fr 1fr;
   gap: 0px 8px;
   grid-auto-flow: row;
   grid-template-areas:
-    "header header"
-    "upload upload"
-    "toggle filter"
-    "table-section table-section"
-    "download download";
+    "header header header"
+    "upload upload upload"
+    "toggle filter filter"
+    "table-section table-section table-section"
+    "download download download";
 }
 
 .header { grid-area: header; }
@@ -178,9 +178,14 @@ td {
 }
 
 /* Set a specific width for the first and second columns */
-.toggle-columns-table td:nth-child(1),
+.toggle-columns-table td:nth-child(1) {
+  width: 5%; /* Adjust this value as needed */
+  align-items: left;
+}
+
 .toggle-columns-table td:nth-child(2) {
   width: 40%; /* Adjust this value as needed */
+  align-items: left;
 }
 
 /* Set a specific width for the third column */
@@ -192,5 +197,7 @@ td {
 .group-by-label {
   display: flex;
   justify-content: flex-end;
-  align-items: center;
+  align-items: left;
 }
+
+.field-name-cell { align-items: left }

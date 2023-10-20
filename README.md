@@ -18,7 +18,7 @@ Data Management: Users can manage, filter, and download specific portions of the
 Data Exploration: The project allows users to gain insights and patterns from large datasets by filtering and searching for specific information.
 Overall, the project's purpose is to provide an effective and user-friendly way to work with CSV data, enabling users to interact with the data, analyze it, and extract relevant information efficiently.
 
-# CSV file with multi-layer nested key-value pairs and non-nested columns
+# CSV file with JSON Strings in a column
 An example of a CSV file with multi-layer nested key-value pairs and non-nested columns. In this example, the CSV data will include information about individuals, including their name, age, email, address details, phone number, and occupation. The address details will be nested within the "address" column, which includes "house," "street," "city," and "zip" as sub-columns.
 
 Here's how the CSV file might look:
@@ -53,6 +53,9 @@ const data = [
     occupation: 'Software Engineer',
   },
 ```
+
+# ToDo
+Look to GPT to provide analysis.
 
 # Setup
 To set up and run the project, follow these step-by-step instructions:

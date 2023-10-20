@@ -4,7 +4,7 @@ import DataTable from "react-data-table-component";
 import { useDropzone } from "react-dropzone";
 import Modal from "react-modal";
 import RowPopup from "./RowPopup";
-import { flattenProperties, mergeRow } from './JSONFlatten';
+import { flattenProperties } from './JSONFlatten';
 import "./App.css";
 
 Modal.setAppElement("#root");
@@ -101,53 +101,72 @@ const App = () => {
   const handleDrop = useCallback((acceptedFiles) => {
     const file = acceptedFiles[0];
     const reader = new FileReader();
-
+    const ignoredKeys = ['lenses', 'metadata'];
+  
     reader.onload = (event) => {
       const fileContent = event.target.result;
-
+  
       if (file.name.endsWith(".csv")) {
         Papa.parse(fileContent, {
           header: true,
           skipEmptyLines: true,
           complete: (result) => {
+            const originalHeaders = Object.keys(result.data[0]);
+  
             const processedData = result.data.map(row => {
+              let newRow = { ...row };
+  
+              // Process PROPERTIES column
               if (row.PROPERTIES) {
                 const flattenedProperties = flattenProperties(row.PROPERTIES);
-                return mergeRow(flattenedProperties, row);
+                newRow = { ...newRow, ...flattenedProperties };
               }
-              return row;
+  
+              // Process TAGS column
+              if (row.TAGS) {
+                const flattenedTags = flattenProperties(row.TAGS);
+                newRow = { ...newRow, ...flattenedTags };
+              }
+  
+              return newRow;
             });
-
-            console.log("Processed Data:", processedData);  // Debugging log
-
-            let maxKeys = 0;
-            let modelRow = null;
-
+  
+            // Logic to find the longest JSON string for both PROPERTIES and TAGS
+            let maxPropertyKeys = 0;
+            let maxTagKeys = 0;
+            let modelPropertyRow = null;
+            let modelTagRow = null;
+  
             processedData.forEach(row => {
-              console.log("Current Row:", row);  // Debugging log
-
               if (row.PROPERTIES) {
                 const flattenedProperties = flattenProperties(row.PROPERTIES);
-                console.log("Flattened Properties:", flattenedProperties);  // Debugging log
-
                 const keysCount = Object.keys(flattenedProperties).length;
-                if (keysCount > maxKeys) {
-                  maxKeys = keysCount;
-                  modelRow = flattenedProperties;
+                if (keysCount > maxPropertyKeys) {
+                  maxPropertyKeys = keysCount;
+                  modelPropertyRow = flattenedProperties;
+                }
+              }
+  
+              if (row.TAGS) {
+                const flattenedTags = flattenProperties(row.TAGS);
+                const keysCount = Object.keys(flattenedTags).length;
+                if (keysCount > maxTagKeys) {
+                  maxTagKeys = keysCount;
+                  modelTagRow = flattenedTags;
                 }
               }
             });
-
-            if (modelRow) {
-              // Use modelRow to generate additional column headers
-              const newHeaders = [...Object.keys(modelRow), ...headers];
-              setHeaders(newHeaders);
+  
+            let newHeaders = [...originalHeaders];
+            if (modelPropertyRow) {
+              newHeaders = [...newHeaders, ...Object.keys(modelPropertyRow)];
             }
-
-            if (Array.isArray(processedData) && processedData.length > 0 && typeof processedData[0] === 'object') {
-              setHeaders(Object.keys(processedData[0]));
+            if (modelTagRow) {
+              newHeaders = [...newHeaders, ...Object.keys(modelTagRow)];
             }
-
+  
+            setHeaders(newHeaders);
+  
             setData(processedData);
             setRenamedHeaders({});
             setHiddenColumns([]);
@@ -177,7 +196,7 @@ const App = () => {
     };
 
     reader.readAsText(file);
-  }, [headers]);
+  }, []);
 
   const { getRootProps, getInputProps } = useDropzone({
     onDrop: handleDrop,

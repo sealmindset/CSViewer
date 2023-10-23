@@ -358,6 +358,16 @@ const App = () => {
     });
   }, [data, headers, searchTerms, filterCriteria]);
 
+  const handleSave = (editedRowData) => {
+    const updatedData = data.map((row) => {
+      if (row.id === editedRowData.id) {  // Assuming each row has a unique 'id' field
+        return editedRowData;
+      }
+      return row;
+    });
+    setData(updatedData);
+  };
+
   return (
     <div className="App">
       {/* Section 1: Header or Title - CVS Table Display */}
@@ -514,9 +524,9 @@ const App = () => {
             headers={headers}
             renamedHeaders={renamedHeaders}
             hiddenColumns={hiddenColumns}
-            onClose={() => setIsModalOpen(false)} 
+            onClose={() => setIsModalOpen(false)}
+            onSave={handleSave}  // Pass the handleSave function here
         />
-
       </Modal>
 
       {/* Section 8: File Name Modal */}

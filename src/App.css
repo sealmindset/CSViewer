@@ -25,6 +25,7 @@ body {
   grid-auto-flow: row;
   grid-template-areas:
     "header header header"
+    "exceptype exceptype exceptype"
     "upload upload upload"
     "toggle filter filter"
     "table-section table-section table-section"
@@ -32,6 +33,7 @@ body {
 }
 
 .header { grid-area: header; }
+.exceptype { grid-area: header; }
 .upload { grid-area: upload; }
 .toggle { grid-area: toggle; }
 .filter { grid-area: filter; }
@@ -219,4 +221,11 @@ td {
   100% {
     transform: rotate(360deg);
   }
+}
+
+.exceptype {
+  grid-area: exceptype;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
 }

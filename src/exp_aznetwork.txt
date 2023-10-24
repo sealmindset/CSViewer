@@ -1,0 +1,17 @@
+# Ignore
+lenses
+metadata
+subnets
+
+# Unchecked
+ID
+TYPE
+TENANTID
+KIND
+LOCATION
+MANAGEDBY
+SKU
+PLAN
+IDENTITY
+ZONES
+EXTENDEDLOCATION

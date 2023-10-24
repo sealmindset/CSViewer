@@ -21,11 +21,6 @@ const App = () => {
   const [groupByColumns, setGroupByColumns] = useState({});
   const [selectedRowData, setSelectedRowData] = useState({});
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const [toggleCurrentPage, setToggleCurrentPage] = useState(1);
-  const [filterCurrentPage, setFilterCurrentPage] = useState(1);
-  const rowsPerPage = 20;
-
   const [isLoading, setIsLoading] = useState(false);
 
   // First useEffect for updating filter criteria
@@ -373,6 +368,11 @@ const App = () => {
       {/* Section 1: Header or Title - CVS Table Display */}
       <div className="header">
         <h1>CVS | JSON Viewer</h1>
+      </div>
+
+      {/* Section 1.5: Exceptype Dropdown */}
+      <div className="exceptype">
+        <h2>Fields to ignore</h2>
       </div>
      
       {/* Section 2: CVS File Input */}

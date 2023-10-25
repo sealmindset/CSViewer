@@ -23,6 +23,9 @@ const App = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  const [ignoredKeys, setIgnoredKeys] = useState([]);
+  const [columnsToUncheck, setColumnsToUncheck] = useState([]);
+
   // First useEffect for updating filter criteria
   useEffect(() => {
     setFilterCriteria((prevCriteria) => {
@@ -103,9 +106,14 @@ const App = () => {
     setIsLoading(true);  // Set loading to true
     const file = acceptedFiles[0];
     const reader = new FileReader();
-    const ignoredKeys = ['lenses', 'metadata', 'subnets']  
+    //const ignoredKeys = ['lenses', 'metadata', 'subnets']  
     // Define the array of columns to be unchecked by default
-    const columnsToUncheck = ['ID', 'TYPE', 'TENANTID', 'KIND', 'LOCATION', 'MANAGEDBY', 'SKU', 'PLAN', 'IDENTITY', 'ZONES', 'EXTENDEDLOCATION'];
+    //const columnsToUncheck = ['ID', 'TYPE', 'TENANTID', 'KIND', 'LOCATION', 'MANAGEDBY', 'SKU', 'PLAN', 'IDENTITY', 'ZONES', 'EXTENDEDLOCATION'];
+
+    const hasIgnoredKeys = ignoredKeys && ignoredKeys.length > 0;
+    const hasColumnsToUncheck = columnsToUncheck && columnsToUncheck.length > 0;
+
+
     
     reader.onload = (event) => {
       const fileContent = event.target.result;
@@ -124,9 +132,11 @@ const App = () => {
               if (row.PROPERTIES) {
                 const flattenedProperties = flattenProperties(row.PROPERTIES);
                 const filteredProperties = Object.fromEntries(
-                  Object.entries(flattenedProperties).filter(
-                    ([key]) => !ignoredKeys.some(ignoredKey => key.startsWith(ignoredKey))
-                  )
+                  hasIgnoredKeys ?
+                    Object.entries(flattenedProperties).filter(
+                      ([key]) => !ignoredKeys.some(ignoredKey => key.startsWith(ignoredKey))
+                    )
+                  : Object.entries(flattenedProperties)
                 );
                 newRow = { ...newRow, ...filteredProperties };
               }
@@ -222,7 +232,7 @@ const App = () => {
 
     reader.readAsText(file);
    
-  }, []);
+  }, [ignoredKeys, columnsToUncheck]);
 
   const { getRootProps, getInputProps } = useDropzone({
     onDrop: handleDrop,
@@ -363,6 +373,48 @@ const App = () => {
     setData(updatedData);
   };
 
+  const handleConfigUpload = useCallback((acceptedFiles) => {
+    const file = acceptedFiles[0];
+    const reader = new FileReader();
+  
+    reader.onload = (event) => {
+      const fileContent = event.target.result;
+  
+      try {
+        const config = JSON.parse(fileContent);
+  
+        if (config.ignoredKeys && Array.isArray(config.ignoredKeys)) {
+          setIgnoredKeys(config.ignoredKeys);
+        }
+        if (config.columnsToUncheck && Array.isArray(config.columnsToUncheck)) {
+          setColumnsToUncheck(config.columnsToUncheck);
+        }
+  
+      } catch (error) {
+        alert("Invalid configuration file. Please upload a valid JSON file.");
+      }
+    };
+  
+    reader.readAsText(file);
+  }, []);
+  
+
+  const { getRootProps: getConfigRootProps, getInputProps: getConfigInputProps } = useDropzone({
+    onDrop: handleConfigUpload,
+    accept: ".json", // Only allow JSON files for configuration
+    multiple: false,
+  });
+
+  // Function to handle checkbox toggle for ignoredKeys
+  const toggleIgnoredKey = (key) => {
+    // Your logic to toggle ignored key
+  };
+
+  // Function to handle checkbox toggle for columnsToUncheck
+  const toggleColumnToUncheck = (column) => {
+    // Your logic to toggle column to uncheck
+  };
+
   return (
     <div className="App">
       {/* Section 1: Header or Title - CVS Table Display */}
@@ -370,9 +422,52 @@ const App = () => {
         <h1>CVS | JSON Viewer</h1>
       </div>
 
-      {/* Section 1.5: Exceptype Dropdown */}
-      <div className="exceptype">
+      {/* Section 1.5: Exceptype Upload */}
+      <div className="exceptup">
         <h2>Fields to ignore</h2>
+        <div {...getConfigRootProps()} className="dropzone">
+          <input {...getConfigInputProps()} />
+          <p>Drag 'n' drop a Config JSON file here, or click to select a file</p>
+        </div>
+      </div>
+      
+      {/* Section 1.6: Exceptype Tables */}
+      <div className="exceptype">
+        {/* Table for ignoredKeys */}
+        <table style={{ width: '100%', marginTop: '20px' }}>
+          <thead>
+            <tr>
+              <th style={{ width: '1%' }}> </th>
+              <th>Ignore Column Headers</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ignoredKeys.map((key, index) => (
+              <tr key={index}>
+                <td><input type="checkbox" onChange={() => toggleIgnoredKey(key)} /></td>
+                <td>{key}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {/* Table for columnsToUncheck */}
+        <table style={{ width: '100%', marginTop: '20px' }}>
+          <thead>
+            <tr>
+              <th style={{ width: '1%' }}> </th>
+              <th>Hide Columns</th>
+            </tr>
+          </thead>
+          <tbody>
+            {columnsToUncheck.map((column, index) => (
+              <tr key={index}>
+                <td><input type="checkbox" onChange={() => toggleColumnToUncheck(column)} /></td>
+                <td>{column}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
      
       {/* Section 2: CVS File Input */}
@@ -545,6 +640,7 @@ const App = () => {
           </div>
         </div>
       </Modal>
+
     </div>
   );
 };

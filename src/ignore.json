@@ -1,0 +1,4 @@
+{
+  "ignoredKeys": ["lenses", "metadata", "subnets"],
+  "columnsToUncheck": ["ID", "TYPE", "TENANTID", "KIND", "LOCATION", "MANAGEDBY", "SKU", "PLAN", "IDENTITY", "ZONES", "EXTENDEDLOCATION"]
+}

@@ -1,4 +1,24 @@
 {
-  "ignoredKeys": ["lenses", "metadata", "subnets"],
-  "columnsToUncheck": ["ID", "TYPE", "TENANTID", "KIND", "LOCATION", "MANAGEDBY", "SKU", "PLAN", "IDENTITY", "ZONES", "EXTENDEDLOCATION"]
+  "ignoredKeys": [
+    "lenses",
+    "metadata",
+    "subnets",
+    "enabled",
+    "virtual"
+  ],
+  "columnsToUncheck": [
+    "ID",
+    "TYPE",
+    "TENANTID",
+    "KIND",
+    "LOCATION",
+    "MANAGEDBY",
+    "SKU",
+    "PLAN",
+    "IDENTITY",
+    "ZONES",
+    "EXTENDEDLOCATION",
+    "PROPERTIES",
+    "TAGS"
+  ]
 }

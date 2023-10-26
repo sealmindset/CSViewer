@@ -26,6 +26,10 @@ const App = () => {
   const [ignoredKeys, setIgnoredKeys] = useState([]);
   const [columnsToUncheck, setColumnsToUncheck] = useState([]);
 
+  const [isConfigFileNameModalOpen, setIsConfigFileNameModalOpen] = useState(false);
+  const [configFileName, setConfigFileName] = useState("");
+
+
   // First useEffect for updating filter criteria
   useEffect(() => {
     setFilterCriteria((prevCriteria) => {
@@ -415,6 +419,76 @@ const App = () => {
     // Your logic to toggle column to uncheck
   };
 
+  const updateIgnoredKey = (index, newValue) => {
+    const newIgnoredKeys = [...ignoredKeys];
+    newIgnoredKeys[index] = newValue;
+    setIgnoredKeys(newIgnoredKeys);
+  };
+  
+  const updateColumnToUncheck = (index, newValue) => {
+    const newColumnsToUncheck = [...columnsToUncheck];
+    newColumnsToUncheck[index] = newValue;
+    setColumnsToUncheck(newColumnsToUncheck);
+  };
+  
+  const addNewIgnoredKey = () => {
+    setIgnoredKeys([...ignoredKeys, ""]);
+  };
+
+  const removeIgnoredKey = (index) => {
+    const newIgnoredKeys = [...ignoredKeys];
+    newIgnoredKeys.splice(index, 1);
+    setIgnoredKeys(newIgnoredKeys);
+  };
+
+  const addNewColumnToUncheck = () => {
+    setColumnsToUncheck([...columnsToUncheck, ""]);
+  };
+
+  const removeColumnToUncheck = (index) => {
+    const newColumnsToUncheck = [...columnsToUncheck];
+    newColumnsToUncheck.splice(index, 1);
+    setColumnsToUncheck(newColumnsToUncheck);
+  };
+
+  const saveConfigToFile = () => {
+    const config = {
+      ignoredKeys,
+      columnsToUncheck
+    };
+  
+    const dataToExport = JSON.stringify(config, null, 2);
+    const blob = new Blob([dataToExport], { type: 'text/json;charset=utf-8;' });
+    const link = document.createElement('a');
+  
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${configFileName}.json`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  
+    // Close the filename modal and reset the filename
+    setIsConfigFileNameModalOpen(false);
+    setConfigFileName("");
+  };
+  
+  
+  const promptConfigFileName = () => {
+    setIsConfigFileNameModalOpen(true);
+  };
+
+  const handleConfigFileNameSubmit = () => {
+    setIsConfigFileNameModalOpen(false);
+    if (configFileName.trim() !== "") {
+      saveConfigToFile();
+    }
+  };
+  
+  
   return (
     <div className="App">
       {/* Section 1: Header or Title - CVS Table Display */}
@@ -445,9 +519,11 @@ const App = () => {
             {ignoredKeys.map((key, index) => (
               <tr key={index}>
                 <td><input type="checkbox" onChange={() => toggleIgnoredKey(key)} /></td>
-                <td>{key}</td>
+                <td><input type="text" value={key} onChange={(e) => updateIgnoredKey(index, e.target.value)} /></td>
+                <td><button onClick={() => removeIgnoredKey(index)}>Remove</button></td> {/* Add this if you want a remove button */}
               </tr>
             ))}
+            <tr><button onClick={addNewIgnoredKey}>Add Row</button></tr>
           </tbody>
         </table>
 
@@ -463,13 +539,16 @@ const App = () => {
             {columnsToUncheck.map((column, index) => (
               <tr key={index}>
                 <td><input type="checkbox" onChange={() => toggleColumnToUncheck(column)} /></td>
-                <td>{column}</td>
+                <td><input type="text" value={column} onChange={(e) => updateColumnToUncheck(index, e.target.value)} /></td>
+                <td><button onClick={() => removeColumnToUncheck(index)}>Remove</button></td>
               </tr>
             ))}
+            <tr><button onClick={addNewColumnToUncheck}>Add Row</button></tr>
           </tbody>
         </table>
+        <button onClick={promptConfigFileName}>Save Config</button>
       </div>
-     
+
       {/* Section 2: CVS File Input */}
       <div className="upload">
         <div className="upload-container">
@@ -637,6 +716,23 @@ const App = () => {
           <div className="file-name-modal-buttons">
             <button onClick={handleFileNameSubmit}>Submit</button>
             <button onClick={() => setIsFileNameModalOpen(false)}>Cancel</button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Config File Name Modal */}
+      <Modal isOpen={isConfigFileNameModalOpen} onRequestClose={() => setIsConfigFileNameModalOpen(false)}>
+        <div className="file-name-modal">
+          <h2>Enter Config File Name</h2>
+          <input
+            type="text"
+            value={configFileName}
+            onChange={(e) => setConfigFileName(e.target.value)}
+            placeholder="Enter file name without extension"
+          />
+          <div className="file-name-modal-buttons">
+            <button onClick={handleConfigFileNameSubmit}>Submit</button>
+            <button onClick={() => setIsConfigFileNameModalOpen(false)}>Cancel</button>
           </div>
         </div>
       </Modal>

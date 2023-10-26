@@ -5,6 +5,7 @@ import { useDropzone } from "react-dropzone";
 import Modal from "react-modal";
 import RowPopup from "./RowPopup";
 import { flattenProperties } from './JSONFlatten';
+
 import "./App.css";
 
 Modal.setAppElement("#root");
@@ -110,14 +111,8 @@ const App = () => {
     setIsLoading(true);  // Set loading to true
     const file = acceptedFiles[0];
     const reader = new FileReader();
-    //const ignoredKeys = ['lenses', 'metadata', 'subnets']  
-    // Define the array of columns to be unchecked by default
-    //const columnsToUncheck = ['ID', 'TYPE', 'TENANTID', 'KIND', 'LOCATION', 'MANAGEDBY', 'SKU', 'PLAN', 'IDENTITY', 'ZONES', 'EXTENDEDLOCATION'];
 
     const hasIgnoredKeys = ignoredKeys && ignoredKeys.length > 0;
-    const hasColumnsToUncheck = columnsToUncheck && columnsToUncheck.length > 0;
-
-
     
     reader.onload = (event) => {
       const fileContent = event.target.result;
@@ -498,7 +493,7 @@ const App = () => {
 
       {/* Section 1.5: Exceptype Upload */}
       <div className="exceptup">
-        <h2>Fields to ignore</h2>
+        <h2>Ignore Columns or Values</h2>
         <div {...getConfigRootProps()} className="dropzone">
           <input {...getConfigInputProps()} />
           <p>Drag 'n' drop a Config JSON file here, or click to select a file</p>
@@ -552,7 +547,7 @@ const App = () => {
       {/* Section 2: CVS File Input */}
       <div className="upload">
         <div className="upload-container">
-          <h2>Upload CSV|JSON Formatted File</h2>
+          <h2>Upload CSV | JSON Formatted File</h2>
           <div {...getRootProps()} className="dropzone">
             <input {...getInputProps()} />
             <p>Drag 'n' drop a CSV or JSON file here, or click to select a file</p>

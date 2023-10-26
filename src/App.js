@@ -20,6 +20,8 @@ import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import CardHeader from '@mui/material/CardHeader';
 
+import Tooltip from '@mui/material/Tooltip';
+
 // For Material-UI icons
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
@@ -507,14 +509,32 @@ const App = () => {
       {/* Section 1: Header or Title - CVS Table Display */}
       <div className="header">
         <Card className="card">
-          <CardHeader title="CVS | JSON Viewer" />
+        <CardHeader 
+          title="CSV | JSON File Examiner" 
+          titleTypographyProps={{ align: 'center', variant: 'h4' }}
+        />
         </Card>
       </div>
 
       {/* Section 1.5: Exceptype Upload */}
+   
       <div className="exceptup">
         <Card className="card">
-        <CardHeader title="Ignore Columns or Values" />
+
+        <Tooltip 
+          title="(Optional) Upload a JSON file of predetermined fields and columns to hide when uploading file for analysis." 
+          placement="top-start" 
+          disableInteractive 
+          arrow
+          classes={{
+            tooltip: {
+              fontSize: "20px", // Increase the font size
+              maxWidth: "none" // Remove the max-width limit
+            }
+          }}
+>         <CardHeader title="Ignore Configuration File" />
+        </Tooltip>
+
           <CardContent>
             <div {...getConfigRootProps()} className="dropzone">
               <input {...getConfigInputProps()} />
@@ -523,16 +543,19 @@ const App = () => {
             </div>
           </CardContent>
         </Card>
-
+      </div>
+     
       {/* Section 1.6: Exceptype Tables */}
+      <div className="exceptype">
         <Card className="card">
+        <CardHeader title="Ignore by Field Value" />
           <CardContent>
             {/* Table for ignoredKeys */}
             <table style={{ width: '100%', marginTop: '20px' }}>
               <thead>
                 <tr>
                   <th style={{ width: '1%' }}> </th>
-                  <th>Ignore Column Headers</th>
+                  <th>Field Value</th>
                 </tr>
               </thead>
               <tbody>
@@ -560,15 +583,16 @@ const App = () => {
         </Card>
       </div>
 
-        {/* Table for columnsToUncheck */}
+      {/* Table for columnsToUncheck */}
       <div className="columnsToUncheck">
         <Card className="card">
+        <CardHeader title="Ignore Content" />
           <CardContent>
             <table style={{ width: '100%', marginTop: '20px' }}>
               <thead>
                 <tr>
                   <th style={{ width: '1%' }}> </th>
-                  <th>Hide Columns</th>
+                  <th>Column Header</th>
                 </tr>
               </thead>
               <tbody>
@@ -604,9 +628,9 @@ const App = () => {
       {/* Section 2: CVS File Input */}
       <div className="upload">
         <Card className="card">
+          <CardHeader title="View File" />
           <CardContent>
             <div className="upload-container">
-              <h2>Upload CSV | JSON Formatted File</h2>
               <div {...getRootProps()} className="dropzone">
                 <input {...getInputProps()} />
                 <i className="upload-icon">📤</i>
@@ -622,6 +646,7 @@ const App = () => {
        {/* Section 3: Toggle Section */}
        <div className="toggle">
         <Card className="card">
+        <CardHeader title="Toggle" />
           <CardContent> 
             <div className="toggle-table-container">
               <table className="toggle-columns-table">
@@ -675,6 +700,7 @@ const App = () => {
       {/* Section 4: Filter Section */}
       <div className="filter">
         <Card className="card">
+        <CardHeader title="Filter" />
           <CardContent> 
             <div className="filter-table-container">
               <table className="filter-table">
@@ -738,9 +764,9 @@ const App = () => {
       {/* Section 5: Table Section */}
       <div className="table-section">
         <Card className="card">
+        <CardHeader title="Results" />
           <CardContent> 
               <DataTable
-                title="CSV|JSON Data"
                 columns={columns}
                 data={groupAndSortTableData(filteredData())}
                 pagination
@@ -755,6 +781,7 @@ const App = () => {
       {/* Section 6: Reset and Download Section */}
       <div className="download">
         <Card className="card">
+        <CardHeader title="Save Results" />
           <CardContent>
             <Button
             variant="contained"

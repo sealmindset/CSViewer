@@ -28,6 +28,7 @@ body {
     "header header header"
     "exceptup exceptup exceptup"
     "exceptype exceptype exceptype"
+    "columnsToUncheck columnsToUncheck columnsToUncheck"
     "upload upload upload"
     "toggle filter filter"
     "table-section table-section table-section"
@@ -37,6 +38,7 @@ body {
 .header { grid-area: header; }
 .exceptup { grid-area: exceptup; }
 .exceptype { grid-area: exceptype; }
+.columnsToUncheck { grid-area: columnsToUncheck; }
 .upload { grid-area: upload; }
 .toggle { grid-area: toggle; }
 .filter { grid-area: filter; }
@@ -235,8 +237,8 @@ td {
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  margin: 20px;
-  padding: 20px;
+  margin: 5px;
+  padding: 10px;
 }
 
 .upload-icon {

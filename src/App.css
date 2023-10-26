@@ -228,3 +228,27 @@ td {
   align-items: center;
   justify-content: flex-start;
 }
+
+/* ...existing styles... */
+
+.card {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin: 20px;
+  padding: 20px;
+}
+
+.upload-icon {
+  font-size: 2em;
+  margin-bottom: 10px;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.action-icon {
+  cursor: pointer;
+  margin-left: 10px;
+}

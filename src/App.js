@@ -21,6 +21,9 @@ import Typography from '@mui/material/Typography';
 import CardHeader from '@mui/material/CardHeader';
 
 import Tooltip from '@mui/material/Tooltip';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import IconButton from '@mui/material/IconButton';
+import Collapse from '@mui/material/Collapse';
 
 // For Material-UI icons
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
@@ -48,6 +51,9 @@ const App = () => {
 
   const [isConfigFileNameModalOpen, setIsConfigFileNameModalOpen] = useState(false);
   const [configFileName, setConfigFileName] = useState("");
+
+  const [expandedIgnore, setExpandedIgnore] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
 
   // First useEffect for updating filter criteria
@@ -501,8 +507,15 @@ const App = () => {
       saveConfigToFile();
     }
   };
+
+  const handleExpandClickignore = () => {
+    setExpandedIgnore(!expandedIgnore);
+  };
   
-  
+  const handleExpandClick = () => {
+    setExpanded(!expanded);
+  };
+
   return (
     <div className="App" style={{ backgroundColor: 'lightgray' }}>
 
@@ -517,118 +530,123 @@ const App = () => {
       </div>
 
       {/* Section 1.5: Exceptype Upload */}
-   
-      <div className="exceptup">
-        <Card className="card">
-
-        <Tooltip 
-          title="(Optional) Upload a JSON file of predetermined fields and columns to hide when uploading file for analysis." 
-          placement="top-start" 
-          disableInteractive 
-          arrow
-          classes={{
-            tooltip: {
-              fontSize: "20px", // Increase the font size
-              maxWidth: "none" // Remove the max-width limit
+      <div className="ignorecol">
+        <Card>
+          <CardHeader
+            title="Ignore Configuration File"
+            action={
+              <IconButton
+                onClick={handleExpandClickignore}
+                aria-expanded={expandedIgnore}
+                aria-label="show more"
+              >
+                <ExpandMoreIcon />
+              </IconButton>
             }
-          }}
->         <CardHeader title="Ignore Configuration File" />
-        </Tooltip>
+          />
+          <Collapse in={expandedIgnore} timeout="auto" unmountOnExit>
 
-          <CardContent>
-            <div {...getConfigRootProps()} className="dropzone">
-              <input {...getConfigInputProps()} />
-              <i className="upload-icon">📤</i>
-              <p>Drag 'n' drop a Config JSON file here, or click to select a file</p>
+            <div className="exceptup">
+              <Card className="card">
+                <CardContent>
+                  <div {...getConfigRootProps()} className="dropzone">
+                    <input {...getConfigInputProps()} />
+                    <i className="upload-icon">📤</i>
+                    <p>Drag 'n' drop a Config JSON file here, or click to select a file</p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-     
-      {/* Section 1.6: Exceptype Tables */}
-      <div className="exceptype">
-        <Card className="card">
-        <CardHeader title="Ignore by Field Value" />
-          <CardContent>
-            {/* Table for ignoredKeys */}
-            <table style={{ width: '100%', marginTop: '20px' }}>
-              <thead>
-                <tr>
-                  <th style={{ width: '1%' }}> </th>
-                  <th>Field Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ignoredKeys.map((key, index) => (
-                  <tr key={index}>
-                    <td><input type="checkbox" onChange={() => toggleIgnoredKey(key)} /></td>
-                    <td><input type="text" value={key} onChange={(e) => updateIgnoredKey(index, e.target.value)} /></td>
-                    <Button variant="contained" color="secondary" startIcon={<DeleteIcon />} onClick={removeIgnoredKey}>
-                      Remove
-                    </Button>
-                  </tr>
-                ))}
-                <tr>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<AddIcon />}
-                    onClick={addNewIgnoredKey}>
-                      Add Row
-                  </Button>
-                </tr>
-              </tbody>
-            </table>
-          </CardContent>
-        </Card>
-      </div>
+          
+            {/* Section 1.6: Exceptype Tables */}
+            <div className="exceptype">
+              <Card className="card">
+              <CardHeader title="Ignore by Field Value" />
+                <CardContent>
+                  {/* Table for ignoredKeys */}
+                  <table style={{ width: '100%', marginTop: '20px' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ width: '1%' }}> </th>
+                        <th>Field Value</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ignoredKeys.map((key, index) => (
+                        <tr key={index}>
+                          <td><input type="checkbox" onChange={() => toggleIgnoredKey(key)} /></td>
+                          <td><input type="text" value={key} onChange={(e) => updateIgnoredKey(index, e.target.value)} /></td>
+                          <Button variant="contained" color="secondary" startIcon={<DeleteIcon />} onClick={removeIgnoredKey}>
+                            Remove
+                          </Button>
+                        </tr>
+                      ))}
+                      <tr>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          startIcon={<AddIcon />}
+                          onClick={addNewIgnoredKey}>
+                            Add Row
+                        </Button>
+                      </tr>
+                    </tbody>
+                  </table>
+                </CardContent>
+              </Card>
+            </div>
 
-      {/* Table for columnsToUncheck */}
-      <div className="columnsToUncheck">
-        <Card className="card">
-        <CardHeader title="Ignore Content" />
-          <CardContent>
-            <table style={{ width: '100%', marginTop: '20px' }}>
-              <thead>
-                <tr>
-                  <th style={{ width: '1%' }}> </th>
-                  <th>Column Header</th>
-                </tr>
-              </thead>
-              <tbody>
-                {columnsToUncheck.map((column, index) => (
-                  <tr key={index}>
-                    <td><input type="checkbox" onChange={() => toggleColumnToUncheck(column)} /></td>
-                    <td><input type="text" value={column} onChange={(e) => updateColumnToUncheck(index, e.target.value)} /></td>
-                    <td><Button variant="contained" color="secondary" startIcon={<DeleteIcon />} onClick={() => removeColumnToUncheck(index)}>Remove</Button></td>
-                  </tr>
-                ))}
-                <tr>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<AddIcon />}
-                    onClick={addNewColumnToUncheck}>
-                      Add Row
-                  </Button>
-                </tr>
-              </tbody>
-            </table>
-            <Button
-            variant="contained"
-            color="primary"
-            startIcon={<SaveIcon />}
-            onClick={promptConfigFileName}>
-              Save Config
-            </Button>
-          </CardContent>
+            {/* Table for columnsToUncheck */}
+            <div className="columnsToUncheck">
+              <Card className="card">
+              <CardHeader title="Ignore Content" />
+                <CardContent>
+                  <table style={{ width: '100%', marginTop: '20px' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ width: '1%' }}> </th>
+                        <th>Column Header</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {columnsToUncheck.map((column, index) => (
+                        <tr key={index}>
+                          <td><input type="checkbox" onChange={() => toggleColumnToUncheck(column)} /></td>
+                          <td><input type="text" value={column} onChange={(e) => updateColumnToUncheck(index, e.target.value)} /></td>
+                          <td><Button variant="contained" color="secondary" startIcon={<DeleteIcon />} onClick={() => removeColumnToUncheck(index)}>Remove</Button></td>
+                        </tr>
+                      ))}
+                      <tr>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          startIcon={<AddIcon />}
+                          onClick={addNewColumnToUncheck}>
+                            Add Row
+                        </Button>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      startIcon={<SaveIcon />}
+                      onClick={promptConfigFileName}>
+                        Save Config
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </Collapse>
         </Card>
       </div>
 
       {/* Section 2: CVS File Input */}
       <div className="upload">
         <Card className="card">
-          <CardHeader title="View File" />
+          <CardHeader title="Upload to be Examined" />
           <CardContent>
             <div className="upload-container">
               <div {...getRootProps()} className="dropzone">
@@ -643,124 +661,142 @@ const App = () => {
 
       {isLoading && <div className="spinner"></div>}
 
-       {/* Section 3: Toggle Section */}
-       <div className="toggle">
-        <Card className="card">
-        <CardHeader title="Toggle" />
-          <CardContent> 
-            <div className="toggle-table-container">
-              <table className="toggle-columns-table">
-                {/* Toggle Section */}
-                <tbody>
-                  {Array.isArray(headers) && headers.map((header) => {
-                    const truncatedHeaderValue = (renamedHeaders[header] || header).substring(0, 100);
-                    return (
-                      <tr key={header}>
-                        <td>
-                          <input
-                            type="checkbox"
-                            checked={!hiddenColumns.includes(header)}
-                            onChange={(e) => handleColumnToggle(e, header)}
-                          />
-                        </td>
-                        <td className="field-name-cell">
-                          <input
-                            type="text"
-                            className="rename-input"
-                            value={truncatedHeaderValue}
-                            onChange={(e) =>
-                              setRenamedHeaders((prevRenamedHeaders) => ({
-                                ...prevRenamedHeaders,
-                                [header]: e.target.value,
-                              }))
-                            }
-                            maxLength={100}
-                          />
-                        </td>
-                        <td className="group-by-label">
-                          <label>
-                            Group By:
-                            <input
-                              type="checkbox"
-                              checked={groupByColumns[header]}
-                              onChange={(e) => handleGroupByToggle(e, header)}
-                            />
-                          </label>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+      <div className="filtertoggle">
+        <Card>
+        <CardHeader
+          title="Filter and Toggle"
+          action={
+            <IconButton
+              onClick={handleExpandClick}
+              aria-expanded={expanded}
+              aria-label="show more"
+            >
+              <ExpandMoreIcon />
+            </IconButton>
+          }
+        />
+        <Collapse in={expanded} timeout="auto" unmountOnExit>
+            {/* Section 3: Toggle Section */}
+            <div className="toggle">
+              <Card className="card">
+              <CardHeader title="Toggle" />
+                <CardContent> 
+                  <div className="toggle-table-container">
+                    <table className="toggle-columns-table">
+                      {/* Toggle Section */}
+                      <tbody>
+                        {Array.isArray(headers) && headers.map((header) => {
+                          const truncatedHeaderValue = (renamedHeaders[header] || header).substring(0, 100);
+                          return (
+                            <tr key={header}>
+                              <td>
+                                <input
+                                  type="checkbox"
+                                  checked={!hiddenColumns.includes(header)}
+                                  onChange={(e) => handleColumnToggle(e, header)}
+                                />
+                              </td>
+                              <td className="field-name-cell">
+                                <input
+                                  type="text"
+                                  className="rename-input"
+                                  value={truncatedHeaderValue}
+                                  onChange={(e) =>
+                                    setRenamedHeaders((prevRenamedHeaders) => ({
+                                      ...prevRenamedHeaders,
+                                      [header]: e.target.value,
+                                    }))
+                                  }
+                                  maxLength={100}
+                                />
+                              </td>
+                              <td className="group-by-label">
+                                <label>
+                                  Group By:
+                                  <input
+                                    type="checkbox"
+                                    checked={groupByColumns[header]}
+                                    onChange={(e) => handleGroupByToggle(e, header)}
+                                  />
+                                </label>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
+
+            {/* Section 4: Filter Section */}
+            <div className="filter">
+              <Card className="card">
+              <CardHeader title="Filter" />
+                <CardContent> 
+                  <div className="filter-table-container">
+                    <table className="filter-table">
+                      <tbody>
+                        {headers.map((header) => (
+                          <React.Fragment key={header}>
+                            {!hiddenColumns.includes(header) && (
+                              <tr>
+                                <td>
+                                  <span>{renamedHeaders[header] || header}:</span>
+                                </td>
+                                <td className="field-name-cell">
+                                  <input
+                                    type="text"
+                                    placeholder={`Search ${renamedHeaders[header] || header}`}
+                                    value={searchTerms[header] || ""}
+                                    onChange={(e) => {
+                                      setSearchTerms((prevSearchTerms) => ({
+                                        ...prevSearchTerms,
+                                        [header]: e.target.value,
+                                      }));
+                                    }}
+                                    maxLength={100}
+                                    style={{ width: "98%" }}
+                                  />
+                                </td>
+                                <td>
+                                  <select
+                                    value={filterCriteria[header] || ""}
+                                    onChange={(e) => {
+                                      setFilterCriteria((prevFilterCriteria) => ({
+                                        ...prevFilterCriteria,
+                                        [header]: e.target.value,
+                                      }));
+                                    }}
+                                  >
+                                    <option value="">All</option>
+                                    {dropdownOptions[header]?.map((option) => {
+                                        if (!option) return null;  // Add this line to handle undefined or null options
+                                        const truncatedOption = option.length > 100 ? option.substring(0, 100) + "..." : option;
+                                        return (
+                                            <option key={option} value={option}>
+                                                {truncatedOption}
+                                            </option>
+                                        );
+                                    })}
+
+                                  </select>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </Collapse>
         </Card>
       </div>
-
-      {/* Section 4: Filter Section */}
-      <div className="filter">
-        <Card className="card">
-        <CardHeader title="Filter" />
-          <CardContent> 
-            <div className="filter-table-container">
-              <table className="filter-table">
-                <tbody>
-                  {headers.map((header) => (
-                    <React.Fragment key={header}>
-                      {!hiddenColumns.includes(header) && (
-                        <tr>
-                          <td>
-                            <span>{renamedHeaders[header] || header}:</span>
-                          </td>
-                          <td className="field-name-cell">
-                            <input
-                              type="text"
-                              placeholder={`Search ${renamedHeaders[header] || header}`}
-                              value={searchTerms[header] || ""}
-                              onChange={(e) => {
-                                setSearchTerms((prevSearchTerms) => ({
-                                  ...prevSearchTerms,
-                                  [header]: e.target.value,
-                                }));
-                              }}
-                              maxLength={100}
-                              style={{ width: "98%" }}
-                            />
-                          </td>
-                          <td>
-                            <select
-                              value={filterCriteria[header] || ""}
-                              onChange={(e) => {
-                                setFilterCriteria((prevFilterCriteria) => ({
-                                  ...prevFilterCriteria,
-                                  [header]: e.target.value,
-                                }));
-                              }}
-                            >
-                              <option value="">All</option>
-                              {dropdownOptions[header]?.map((option) => {
-                                  if (!option) return null;  // Add this line to handle undefined or null options
-                                  const truncatedOption = option.length > 100 ? option.substring(0, 100) + "..." : option;
-                                  return (
-                                      <option key={option} value={option}>
-                                          {truncatedOption}
-                                      </option>
-                                  );
-                              })}
-
-                            </select>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
+      
       {/* Section 5: Table Section */}
       <div className="table-section">
         <Card className="card">

@@ -26,9 +26,11 @@ body {
   grid-auto-flow: row;
   grid-template-areas:
     "header header header"
+    "ignorecol ignorecol ignorecol"  
     "exceptup exceptup exceptup"
     "exceptype exceptype exceptype"
     "columnsToUncheck columnsToUncheck columnsToUncheck"
+    "filtertoggle filtertoggle filtertoggle"
     "upload upload upload"
     "toggle filter filter"
     "table-section table-section table-section"
@@ -36,9 +38,11 @@ body {
 }
 
 .header { grid-area: header; }
+.ignorecol { grid-area: ignorecol; }
 .exceptup { grid-area: exceptup; }
 .exceptype { grid-area: exceptype; }
 .columnsToUncheck { grid-area: columnsToUncheck; }
+.filtertoggle { grid-area: filtertoggle; }
 .upload { grid-area: upload; }
 .toggle { grid-area: toggle; }
 .filter { grid-area: filter; }
@@ -231,8 +235,6 @@ td {
   justify-content: flex-start;
 }
 
-/* ...existing styles... */
-
 .card {
   background-color: #fff;
   border-radius: 8px;
@@ -253,4 +255,10 @@ td {
 .action-icon {
   cursor: pointer;
   margin-left: 10px;
+}
+
+.center-button {
+  display: grid;
+  place-items: center;
+  text-align: center;
 }

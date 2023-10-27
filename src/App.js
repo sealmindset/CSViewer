@@ -7,6 +7,7 @@ import RowPopup from "./RowPopup";
 import { flattenProperties } from './JSONFlatten';
 
 // For Material-UI components
+import Grid from '@mui/material/Grid';
 import Button from '@mui/material/Button';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -25,6 +26,26 @@ import Collapse from '@mui/material/Collapse';
 import "./App.css";
 
 Modal.setAppElement("#root");
+
+const CardSection = ({ title, children, action }) => (
+  <Card className="card">
+    <CardHeader title={title} action={action} />
+    <CardContent>{children}</CardContent>
+  </Card>
+);
+
+const TableSection = ({ headers, rows, renderRow }) => (
+  <table style={{ width: '100%', marginTop: '20px' }}>
+    <thead>
+      <tr>
+        {headers.map((header, index) => (
+          <th key={index} style={{ width: '1%' }}>{header}</th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>{rows.map(renderRow)}</tbody>
+  </table>
+);
 
 const App = () => {
   const [data, setData] = useState([]);
@@ -91,6 +112,24 @@ const App = () => {
       searchTerms: { ...searchTerms },
     });
   }, [renamedHeaders, hiddenColumns, filterCriteria, searchTerms]);
+
+  const renderIgnoredKeyRow = (key, index) => (
+    <tr key={index}>
+      <td><input type="checkbox" onChange={() => toggleIgnoredKey(key)} /></td>
+      <td><input type="text" value={key} onChange={(e) => updateIgnoredKey(index, e.target.value)} /></td>
+      <Button variant="contained" color="secondary" startIcon={<DeleteIcon />} onClick={removeIgnoredKey}>
+        Remove
+      </Button>
+    </tr>
+  );
+
+  const renderColumnToUncheckRow = (column, index) => (
+    <tr key={index}>
+      <td><input type="checkbox" onChange={() => toggleColumnToUncheck(column)} /></td>
+      <td><input type="text" value={column} onChange={(e) => updateColumnToUncheck(index, e.target.value)} /></td>
+      <td><Button variant="contained" color="secondary" startIcon={<DeleteIcon />} onClick={() => removeColumnToUncheck(index)}>Remove</Button></td>
+    </tr>
+  );
 
   // Function to group and sort table data
   const groupAndSortTableData = useCallback((tableData) => {

@@ -15,18 +15,12 @@ import ReplayIcon from '@mui/icons-material/Replay';
 import GetAppIcon from '@mui/icons-material/GetApp';
 
 import Card from '@mui/material/Card';
-import CardActions from '@mui/material/CardActions';
 import CardContent from '@mui/material/CardContent';
-import Typography from '@mui/material/Typography';
 import CardHeader from '@mui/material/CardHeader';
 
-import Tooltip from '@mui/material/Tooltip';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import IconButton from '@mui/material/IconButton';
 import Collapse from '@mui/material/Collapse';
-
-// For Material-UI icons
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 import "./App.css";
 
